@@ -66,7 +66,7 @@ pub fn start() -> Result<(), JsValue> {
     let canvas_height = Rc::new(RefCell::new(canvas.height() as f32));
     let renderer = drawing::Renderer {
         shader: Shader {
-            coordinateIndex: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
+            coordinate_index: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
             program: shaderProgram,
         },
         coordinate_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
@@ -142,7 +142,7 @@ fn drawScene(renderer: &drawing::Renderer) -> Result<(), JsValue> {
     let indices: [u16; _] = [0, 1, 2];
 
     // buffers
-    renderer.triangle(&coordinates, &indices);
+    renderer.triangle(&coordinates, &indices)?;
 
     Ok(())
 }

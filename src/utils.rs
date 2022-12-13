@@ -1,6 +1,6 @@
 use js_sys::WebAssembly;
-use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::{prelude::Closure, JsValue};
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlShader};
 pub fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
@@ -21,26 +21,24 @@ macro_rules! log {
     }
 }
 
-pub fn float_32_array(slice: &[f32]) -> js_sys::Float32Array {
+pub fn float_32_array(slice: &[f32]) -> Result<js_sys::Float32Array, JsValue> {
     let memory_buffer = wasm_bindgen::memory()
-        .dyn_into::<WebAssembly::Memory>()
-        .unwrap()
+        .dyn_into::<WebAssembly::Memory>()?
         .buffer();
     let arr_location = slice.as_ptr() as u32 / 4;
     let array = js_sys::Float32Array::new(&memory_buffer)
         .subarray(arr_location, arr_location + slice.len() as u32);
-    array
+    Ok(array)
 }
 
-pub fn uint_16_array(slice: &[u16]) -> js_sys::Uint16Array {
+pub fn uint_16_array(slice: &[u16]) -> Result<js_sys::Uint16Array, JsValue> {
     let memory_buffer = wasm_bindgen::memory()
-        .dyn_into::<WebAssembly::Memory>()
-        .unwrap()
+        .dyn_into::<WebAssembly::Memory>()?
         .buffer();
     let arr_location = slice.as_ptr() as u32 / 2;
     let array = js_sys::Uint16Array::new(&memory_buffer)
         .subarray(arr_location, arr_location + slice.len() as u32);
-    array
+    Ok(array)
 }
 
 pub fn compile_shader(
