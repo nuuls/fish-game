@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
-use web_sys::{WebGlProgram, WebGlRenderingContext, WebGlShader};
+use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlShader};
 pub fn set_panic_hook() {
     // When the `console_error_panic_hook` feature is enabled, we can call the
     // `set_panic_hook` function at least once during initialization, and then
@@ -102,4 +102,28 @@ pub fn request_animation_frame(f: &Closure<dyn FnMut(f32)>) {
     window()
         .request_animation_frame(f.as_ref().unchecked_ref())
         .expect("should register `requestAnimationFrame` OK");
+}
+
+pub fn bind_buffer_to_attribute(
+    gl: &WebGlRenderingContext,
+    buffer: &WebGlBuffer,
+    attribute_index: u32,
+    num_components: i32,
+) {
+    let type_ = WebGlRenderingContext::FLOAT;
+    let normalize = false;
+    let stride = 0;
+    let offset = 0;
+    gl.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, Some(&buffer));
+
+    gl.vertex_attrib_pointer_with_i32(
+        attribute_index,
+        num_components,
+        type_,
+        normalize,
+        stride,
+        offset,
+    );
+    gl.enable_vertex_attrib_array(attribute_index);
+    gl.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, None);
 }
