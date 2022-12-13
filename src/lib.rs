@@ -4,16 +4,13 @@ extern crate js_sys;
 extern crate mat4;
 extern crate wasm_bindgen;
 extern crate web_sys;
-use js_sys::ArrayBuffer;
-use js_sys::WebAssembly;
+use drawing::Shader;
 use std::cell::RefCell;
-use std::f32::consts::PI;
 use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-use web_sys::{
-    EventTarget, MouseEvent, WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation,
-};
+use web_sys::{EventTarget, WebGlBuffer, WebGlProgram, WebGlRenderingContext};
+mod drawing;
 
 #[allow(dead_code)]
 mod utils;
@@ -22,11 +19,6 @@ use utils::{compile_shader, link_program, request_animation_frame, set_panic_hoo
 const AMORTIZATION: f32 = 0.95;
 
 // vertex + fragment shader
-#[derive(Debug, Clone)]
-struct Shader {
-    pub program: WebGlProgram,
-    pub coordinateIndex: u32,
-}
 
 #[derive(Debug, Clone)]
 struct Buffers(WebGlBuffer, WebGlBuffer, WebGlBuffer);
@@ -59,14 +51,10 @@ pub fn start() -> Result<(), JsValue> {
 
     let fsSource = r#"
     void main(void) {
-        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 0.5);
     }
   "#;
     let shaderProgram = initShaderProgram(&gl, vsSource, fsSource)?;
-    let shader = Shader {
-        coordinateIndex: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
-        program: shaderProgram,
-    };
 
     // Draw the scene repeatedly
     let f = Rc::new(RefCell::new(None));
@@ -76,6 +64,15 @@ pub fn start() -> Result<(), JsValue> {
     let dY = Rc::new(RefCell::new(0.0));
     let canvas_width = Rc::new(RefCell::new(canvas.width() as f32));
     let canvas_height = Rc::new(RefCell::new(canvas.height() as f32));
+    let renderer = drawing::Renderer {
+        shader: Shader {
+            coordinateIndex: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
+            program: shaderProgram,
+        },
+        coordinate_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
+        index_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
+        gl,
+    };
 
     // get canvas as event target
     let event_target: EventTarget = canvas.into();
@@ -92,7 +89,7 @@ pub fn start() -> Result<(), JsValue> {
                 *dY.borrow_mut() *= AMORTIZATION;
             }
             // drawScene(&gl.clone(), programmInfo.clone(), buffers.clone()).unwrap();
-            drawScene(&gl.clone(), shader.clone()).unwrap();
+            drawScene(&renderer).unwrap();
             // Schedule ourself for another requestAnimationFrame callback.
             request_animation_frame(f.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut(f32)>));
@@ -116,8 +113,9 @@ fn initShaderProgram(
 
 #[allow(non_snake_case)]
 #[allow(dead_code)]
-fn drawScene(gl: &WebGlRenderingContext, shader: Shader) -> Result<(), JsValue> {
+fn drawScene(renderer: &drawing::Renderer) -> Result<(), JsValue> {
     use WebGlRenderingContext as xD;
+    let gl = &renderer.gl;
 
     // let Buffers(positionBuffer, colorBuffer, indexBuffer) = buffers;
     gl.clear_color(0.0, 0.0, 0.0, 1.0);
@@ -125,9 +123,8 @@ fn drawScene(gl: &WebGlRenderingContext, shader: Shader) -> Result<(), JsValue> 
     // gl.enable(WebGlRenderingContext::DEPTH_TEST); // Enable depth testing
     // gl.depth_func(WebGlRenderingContext::LEQUAL); // Near things obscure far things
 
-    gl.clear(WebGlRenderingContext::COLOR_BUFFER_BIT | WebGlRenderingContext::DEPTH_BUFFER_BIT);
+    gl.clear(xD::COLOR_BUFFER_BIT | xD::DEPTH_BUFFER_BIT);
 
-    let fieldOfView = 45.0 * PI / 180.0; // in radians
     let canvas: web_sys::HtmlCanvasElement = gl
         .canvas()
         .unwrap()
@@ -135,50 +132,17 @@ fn drawScene(gl: &WebGlRenderingContext, shader: Shader) -> Result<(), JsValue> 
     gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
     let aspect: f32 = canvas.width() as f32 / canvas.height() as f32;
 
-    // Tell WebGL to use our program when drawing
-    gl.use_program(Some(&shader.program));
-
     // data
-    let num_coordinates = 3;
     let coordinates: [f32; _] = [
         -0.5, 0.5, 0.0, //
         -0.5, -0.5, 0.0, //
-        0.5, -0.5, 0.0,
+        0.5, -0.5, 0.0, //
     ];
-    let indices: [i16; 3] = [0, 1, 2];
+
+    let indices: [u16; _] = [0, 1, 2];
 
     // buffers
-    let coordinate_buffer = gl
-        .create_buffer()
-        .ok_or("failed to create vertex_buffer buffer")?;
-    gl.bind_buffer(xD::ARRAY_BUFFER, Some(&coordinate_buffer));
-
-    gl.buffer_data_with_array_buffer_view(
-        xD::ARRAY_BUFFER,
-        &*float_32_array!(coordinates),
-        xD::STATIC_DRAW,
-    );
-    gl.bind_buffer(xD::ARRAY_BUFFER, None);
-
-    let index_buffer = gl
-        .create_buffer()
-        .ok_or("failed to create index_buffer buffer")?;
-    gl.bind_buffer(xD::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
-    gl.buffer_data_with_array_buffer_view(
-        xD::ELEMENT_ARRAY_BUFFER,
-        &*uint_16_array!(indices),
-        xD::STATIC_DRAW,
-    );
-    gl.bind_buffer(xD::ELEMENT_ARRAY_BUFFER, None);
-
-    // bind buffer
-    gl.bind_buffer(xD::ARRAY_BUFFER, Some(&coordinate_buffer));
-    gl.bind_buffer(xD::ELEMENT_ARRAY_BUFFER, Some(&index_buffer));
-    gl.vertex_attrib_pointer_with_i32(shader.coordinateIndex, 3, xD::FLOAT, false, 0, 0);
-    gl.enable_vertex_attrib_array(shader.coordinateIndex);
-
-    // draw
-    gl.draw_elements_with_i32(xD::TRIANGLES, num_coordinates, xD::UNSIGNED_SHORT, 0);
+    renderer.triangle(&coordinates, &indices);
 
     Ok(())
 }

@@ -1,3 +1,4 @@
+use js_sys::WebAssembly;
 use wasm_bindgen::prelude::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlShader};
@@ -19,29 +20,27 @@ macro_rules! log {
         web_sys::console::log_1(&format!( $( $t )* ).into());
     }
 }
-#[macro_export]
-macro_rules! float_32_array {
-    ($arr:expr) => {{
-        let memory_buffer = wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()?
-            .buffer();
-        let arr_location = $arr.as_ptr() as u32 / 4;
-        let array = js_sys::Float32Array::new(&memory_buffer)
-            .subarray(arr_location, arr_location + $arr.len() as u32);
-        array
-    }};
+
+pub fn float_32_array(slice: &[f32]) -> js_sys::Float32Array {
+    let memory_buffer = wasm_bindgen::memory()
+        .dyn_into::<WebAssembly::Memory>()
+        .unwrap()
+        .buffer();
+    let arr_location = slice.as_ptr() as u32 / 4;
+    let array = js_sys::Float32Array::new(&memory_buffer)
+        .subarray(arr_location, arr_location + slice.len() as u32);
+    array
 }
-#[macro_export]
-macro_rules! uint_16_array {
-    ($arr:expr) => {{
-        let memory_buffer = wasm_bindgen::memory()
-            .dyn_into::<WebAssembly::Memory>()?
-            .buffer();
-        let arr_location = $arr.as_ptr() as u32 / 2;
-        let array = js_sys::Uint16Array::new(&memory_buffer)
-            .subarray(arr_location, arr_location + $arr.len() as u32);
-        array
-    }};
+
+pub fn uint_16_array(slice: &[u16]) -> js_sys::Uint16Array {
+    let memory_buffer = wasm_bindgen::memory()
+        .dyn_into::<WebAssembly::Memory>()
+        .unwrap()
+        .buffer();
+    let arr_location = slice.as_ptr() as u32 / 2;
+    let array = js_sys::Uint16Array::new(&memory_buffer)
+        .subarray(arr_location, arr_location + slice.len() as u32);
+    array
 }
 
 pub fn compile_shader(
