@@ -11,6 +11,9 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, WebGlBuffer, WebGlProgram, WebGlRenderingContext};
 mod drawing;
+mod game;
+mod level;
+use game::Game;
 
 #[allow(dead_code)]
 mod utils;
@@ -77,6 +80,8 @@ pub fn start() -> Result<(), JsValue> {
     // get canvas as event target
     let event_target: EventTarget = canvas.into();
 
+    let mut game = Game::new();
+
     // RequestAnimationFrame
     {
         let dX = dX.clone();
@@ -89,7 +94,7 @@ pub fn start() -> Result<(), JsValue> {
                 *dY.borrow_mut() *= AMORTIZATION;
             }
             // drawScene(&gl.clone(), programmInfo.clone(), buffers.clone()).unwrap();
-            drawScene(&renderer).unwrap();
+            drawScene(&renderer, &mut game).unwrap();
             // Schedule ourself for another requestAnimationFrame callback.
             request_animation_frame(f.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut(f32)>));
@@ -113,7 +118,7 @@ fn initShaderProgram(
 
 #[allow(non_snake_case)]
 #[allow(dead_code)]
-fn drawScene(renderer: &drawing::Renderer) -> Result<(), JsValue> {
+fn drawScene(renderer: &drawing::Renderer, game: &mut Game) -> Result<(), JsValue> {
     use WebGlRenderingContext as xD;
     let gl = &renderer.gl;
 
@@ -132,17 +137,13 @@ fn drawScene(renderer: &drawing::Renderer) -> Result<(), JsValue> {
     gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
     let aspect: f32 = canvas.width() as f32 / canvas.height() as f32;
 
-    // data
-    let coordinates: [f32; _] = [
-        -0.5, 0.5, 0.0, //
-        -0.5, -0.5, 0.0, //
-        0.5, -0.5, 0.0, //
-    ];
-
     let indices: [u16; _] = [0, 1, 2];
 
+    for tri in game.next_frame() {
+        renderer.triangle(&tri, &indices)?;
+    }
+
     // buffers
-    renderer.triangle(&coordinates, &indices)?;
 
     Ok(())
 }
