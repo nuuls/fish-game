@@ -54,7 +54,9 @@ features = [
   'WebGlUniformLocation',
   'console',
   'Event',
-  'MouseEventInit'
+  'MouseEventInit',
+  'Performance',
+  'PerformanceTiming'
 ]
 
 [dev-dependencies]

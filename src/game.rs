@@ -1,11 +1,14 @@
 use js_sys::Math::random;
 
-use crate::level::Level;
+use crate::{level::Level, log};
 
 pub struct Game {
     level: Level,
     render_buffer: Vec<Triangle>,
     game_items: Vec<ShitItem>,
+
+    last_fps_print: f64,
+    frames_drawn: usize,
 }
 
 pub trait GameItem {
@@ -55,8 +58,10 @@ impl Game {
     pub fn new() -> Game {
         Game {
             render_buffer: vec![],
-            game_items: random_shit_items(20),
+            game_items: random_shit_items(100),
             level: Level::load_from_svg_str(include_str!("../assets/map.svg")),
+            frames_drawn: 0,
+            last_fps_print: 0.0,
         }
     }
 
@@ -73,7 +78,24 @@ impl Game {
             self.render_buffer.push(item.into_triangle());
         }
 
+        self.handle_fps();
+
         self.render_buffer.clone()
+    }
+
+    fn handle_fps(&mut self) {
+        self.frames_drawn += 1;
+
+        if self.frames_drawn % 100 == 0 {
+            let window = web_sys::window().expect("should have a window in this context");
+            let performance = window
+                .performance()
+                .expect("performance should be available");
+            let now = performance.now();
+            let fps = 100.0 * (1.0 / ((now - self.last_fps_print) / 1000.0));
+            log!("FPS {:.2}", fps);
+            self.last_fps_print = now;
+        }
     }
 }
 
