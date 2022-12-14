@@ -32,8 +32,13 @@ impl GameItem for ShitItem {
 impl ShitItem {
     fn update(&mut self) {
         let tri = &mut self.triangle.coords;
-        for n in 0..tri.len() {
-            let hit_edge = tri[n] >= 1.0 || tri[n] <= -1.0;
+        for n in 0..9 {
+            let bounds = match n % 3 {
+                0 => (23.0, 46.0),
+                1 => (17.5, 18.0),
+                _ => (0.0, 0.0),
+            };
+            let hit_edge = tri[n] <= bounds.0 || tri[n] >= bounds.1;
 
             let movement = match hit_edge {
                 true => -self.moving[n],
@@ -50,7 +55,7 @@ impl Game {
     pub fn new() -> Game {
         Game {
             render_buffer: vec![],
-            game_items: random_shit_items(5),
+            game_items: random_shit_items(20),
             level: Level::load_from_svg_str(include_str!("../assets/map.svg")),
         }
     }
@@ -76,15 +81,16 @@ fn random_shit_items(n: usize) -> Vec<ShitItem> {
     (0..n)
         .map(|_| {
             let mut t = [0.0; 9];
-            for i in 0..9 {
-                t[i] = (random() * 2.0 - 1.0) as f32;
+            for i in 0..3 {
+                t[i * 3] = (random() * 23.0 + 23.0) as f32;
+                t[i * 3 + 1] = (random() * 1.0 + 17.5) as f32;
             }
             ShitItem {
                 triangle: Triangle {
                     coords: t,
-                    color: [0.5; 4],
+                    color: [0.9; 4],
                 },
-                moving: [0.001; 9],
+                moving: [0.01; 9],
             }
         })
         .collect()
