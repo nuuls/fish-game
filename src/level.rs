@@ -119,7 +119,7 @@ impl Level {
 
         for path in points.iter() {
             // not even a triangle
-            if path.len() < 5 {
+            if path.len() < 6 {
                 continue;
             }
 
@@ -128,13 +128,13 @@ impl Level {
             for [a, b, c] in path_triangles.array_chunks::<3>() {
                 triangles.push([
                     path[*a * 2] as f32,
-                    path[(*a + 1) * 2] as f32,
+                    path[*a * 2 + 1] as f32,
                     0.0 as f32,
                     path[*b * 2] as f32,
-                    path[(*b + 1) * 2] as f32,
+                    path[*b * 2 + 1] as f32,
                     0.0 as f32,
                     path[*c * 2] as f32,
-                    path[(*c + 1) * 2] as f32,
+                    path[*c * 2 + 1] as f32,
                     0.0 as f32,
                 ]);
             }
