@@ -55,14 +55,16 @@ pub fn start() -> Result<(), JsValue> {
     let dY = Rc::new(RefCell::new(0.0));
     let _canvas_width = Rc::new(RefCell::new(canvas.width() as f32));
     let _canvas_height = Rc::new(RefCell::new(canvas.height() as f32));
-    let renderer = drawing::Renderer {
+    let mut renderer = drawing::Renderer {
+        coordinate_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
+        index_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
         shader: Shader {
+            camera_index: gl.get_uniform_location(&shaderProgram, "camera").unwrap(),
             coordinate_index: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
             program: shaderProgram,
         },
-        coordinate_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
-        index_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
         gl,
+        camera: mat4::new_identity(),
     };
 
     // get canvas as event target
@@ -82,7 +84,7 @@ pub fn start() -> Result<(), JsValue> {
                 *dY.borrow_mut() *= AMORTIZATION;
             }
             // drawScene(&gl.clone(), programmInfo.clone(), buffers.clone()).unwrap();
-            drawScene(&renderer, &mut game).unwrap();
+            drawScene(&mut renderer, &mut game).unwrap();
             // Schedule ourself for another requestAnimationFrame callback.
             request_animation_frame(f.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut(f32)>));
@@ -106,7 +108,7 @@ fn initShaderProgram(
 
 #[allow(non_snake_case)]
 #[allow(dead_code)]
-fn drawScene(renderer: &drawing::Renderer, game: &mut Game) -> Result<(), JsValue> {
+fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), JsValue> {
     use WebGlRenderingContext as xD;
     let gl = &renderer.gl;
 
@@ -123,7 +125,14 @@ fn drawScene(renderer: &drawing::Renderer, game: &mut Game) -> Result<(), JsValu
         .unwrap()
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
     gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
-    let _aspect: f32 = canvas.width() as f32 / canvas.height() as f32;
+    let aspect: f32 = canvas.width() as f32 / canvas.height() as f32;
+    let zoom = 1.0 / 50.0;
+
+    let mut tmp1 = mat4::new_identity();
+    let mut tmp2 = mat4::new_identity();
+    mat4::scale(&mut tmp1, &tmp2, &[zoom, -zoom * aspect, 1.0]);
+    mat4::translate(&mut tmp2, &tmp1, &[-5.0, -5.0, 0.0]);
+    renderer.camera = tmp2;
 
     let indices: [u16; _] = [0, 1, 2];
 

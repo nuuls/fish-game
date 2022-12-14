@@ -111,6 +111,31 @@ impl Level {
                         }
                     }
                 }
+                Event::Tag("rect", _, attributes) => {
+                    let x = attributes.get("x").unwrap().parse::<f32>().unwrap();
+                    let y = attributes.get("y").unwrap().parse::<f32>().unwrap();
+                    let width = attributes.get("width").unwrap().parse::<f32>().unwrap();
+                    let height = attributes.get("height").unwrap().parse::<f32>().unwrap();
+
+                    let path = vec![
+                        // first triangle
+                        x,
+                        y,
+                        x + width,
+                        y,
+                        x + width,
+                        y + height,
+                        // second triangle
+                        x,
+                        y,
+                        x + width,
+                        y + height,
+                        x,
+                        y + height,
+                    ];
+
+                    points.push(path);
+                }
                 _ => {}
             }
         }

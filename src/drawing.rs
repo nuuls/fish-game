@@ -1,12 +1,15 @@
 use wasm_bindgen::JsValue;
-use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext};
+use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation};
 
 use crate::utils::{float_32_array, uint_16_array};
+
+type Mat4 = [f32; 16];
 
 #[derive(Debug, Clone)]
 pub struct Shader {
     pub program: WebGlProgram,
     pub coordinate_index: u32,
+    pub camera_index: WebGlUniformLocation,
 }
 
 pub struct Renderer {
@@ -14,6 +17,7 @@ pub struct Renderer {
     pub index_buffer: WebGlBuffer,
     pub shader: Shader,
     pub gl: WebGlRenderingContext,
+    pub camera: Mat4,
 }
 
 impl Renderer {
@@ -45,8 +49,12 @@ impl Renderer {
         gl.vertex_attrib_pointer_with_i32(self.shader.coordinate_index, 3, GL::FLOAT, false, 0, 0);
         gl.enable_vertex_attrib_array(self.shader.coordinate_index);
 
+        // bind camera matrix
+
         // Tell WebGL to use our program when drawing
         gl.use_program(Some(&self.shader.program));
+
+        gl.uniform_matrix4fv_with_f32_array(Some(&self.shader.camera_index), false, &self.camera);
 
         // draw
         gl.draw_elements_with_i32(GL::TRIANGLES, NUM_COORDINATES, GL::UNSIGNED_SHORT, 0);
