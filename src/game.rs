@@ -1,9 +1,9 @@
 use js_sys::Math::random;
 
-use crate::level;
+use crate::level::Level;
 
 pub struct Game {
-    level: level::Level,
+    level: Level,
     render_buffer: Vec<Triangle>,
     game_items: Vec<ShitItem>,
 }
@@ -47,7 +47,7 @@ impl Game {
         Game {
             render_buffer: vec![],
             game_items: random_shit_items(5),
-            level: level::Level::load_from_svg("xd"),
+            level: Level::load_from_svg_str(include_str!("../assets/map.svg")),
         }
     }
 
@@ -55,11 +55,10 @@ impl Game {
         self.render_buffer.clear();
         let level_triangles = self.level.triangles();
         for tri in level_triangles {
-            self.render_buffer.push(tri)
+            self.render_buffer.push(*tri)
         }
 
         // data
-
         for item in &mut self.game_items {
             item.update();
             self.render_buffer.push(item.into_triangle());
@@ -67,18 +66,6 @@ impl Game {
 
         self.render_buffer.clone()
     }
-}
-
-fn random_triangles(n: usize) -> Vec<Triangle> {
-    (0..n)
-        .map(|_| {
-            let mut t: Triangle = [0.0; 9];
-            for i in 0..9 {
-                t[i] = (random() * 2.0 - 1.0) as f32;
-            }
-            t
-        })
-        .collect()
 }
 
 fn random_shit_items(n: usize) -> Vec<ShitItem> {

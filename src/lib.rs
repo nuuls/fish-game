@@ -1,4 +1,5 @@
 #![feature(generic_arg_infer)]
+#![feature(array_chunks)]
 
 extern crate js_sys;
 extern crate mat4;
@@ -42,21 +43,8 @@ pub fn start() -> Result<(), JsValue> {
 
     // Vertex shader program
 
-    let vsSource = r#"
-    attribute vec4 coordinates;
-
-    void main(void) {
-        gl_Position = coordinates;
-    }
-  "#;
-
-    // Fragment shader program
-
-    let fsSource = r#"
-    void main(void) {
-        gl_FragColor = vec4(1.0, 0.0, 0.0, 0.5);
-    }
-  "#;
+    let vsSource = include_str!("../assets/shaders/default.vert");
+    let fsSource = include_str!("../assets/shaders/default.frag");
     let shaderProgram = initShaderProgram(&gl, vsSource, fsSource)?;
 
     // Draw the scene repeatedly
@@ -65,8 +53,8 @@ pub fn start() -> Result<(), JsValue> {
     let drag = Rc::new(RefCell::new(false));
     let dX = Rc::new(RefCell::new(0.0));
     let dY = Rc::new(RefCell::new(0.0));
-    let canvas_width = Rc::new(RefCell::new(canvas.width() as f32));
-    let canvas_height = Rc::new(RefCell::new(canvas.height() as f32));
+    let _canvas_width = Rc::new(RefCell::new(canvas.width() as f32));
+    let _canvas_height = Rc::new(RefCell::new(canvas.height() as f32));
     let renderer = drawing::Renderer {
         shader: Shader {
             coordinate_index: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
@@ -78,7 +66,7 @@ pub fn start() -> Result<(), JsValue> {
     };
 
     // get canvas as event target
-    let event_target: EventTarget = canvas.into();
+    let _event_target: EventTarget = canvas.into();
 
     let mut game = Game::new();
 
@@ -135,7 +123,7 @@ fn drawScene(renderer: &drawing::Renderer, game: &mut Game) -> Result<(), JsValu
         .unwrap()
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
     gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
-    let aspect: f32 = canvas.width() as f32 / canvas.height() as f32;
+    let _aspect: f32 = canvas.width() as f32 / canvas.height() as f32;
 
     let indices: [u16; _] = [0, 1, 2];
 
