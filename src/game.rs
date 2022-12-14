@@ -12,7 +12,11 @@ pub trait GameItem {
     fn into_triangle(&self) -> Triangle;
 }
 
-pub type Triangle = [f32; 9];
+#[derive(Clone)]
+pub struct Triangle {
+    pub coords: [f32; 9],
+    pub color: [f32; 4],
+}
 
 struct ShitItem {
     triangle: Triangle,
@@ -21,13 +25,13 @@ struct ShitItem {
 
 impl GameItem for ShitItem {
     fn into_triangle(&self) -> Triangle {
-        self.triangle
+        self.triangle.clone()
     }
 }
 
 impl ShitItem {
     fn update(&mut self) {
-        let tri = &mut self.triangle;
+        let tri = &mut self.triangle.coords;
         for n in 0..tri.len() {
             let hit_edge = tri[n] >= 1.0 || tri[n] <= -1.0;
 
@@ -55,7 +59,7 @@ impl Game {
         self.render_buffer.clear();
         let level_triangles = self.level.triangles();
         for tri in level_triangles {
-            self.render_buffer.push(*tri)
+            self.render_buffer.push(tri.clone())
         }
 
         // data
@@ -71,12 +75,15 @@ impl Game {
 fn random_shit_items(n: usize) -> Vec<ShitItem> {
     (0..n)
         .map(|_| {
-            let mut t: Triangle = [0.0; 9];
+            let mut t = [0.0; 9];
             for i in 0..9 {
                 t[i] = (random() * 2.0 - 1.0) as f32;
             }
             ShitItem {
-                triangle: t,
+                triangle: Triangle {
+                    coords: t,
+                    color: [0.5; 4],
+                },
                 moving: [0.001; 9],
             }
         })

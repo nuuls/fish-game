@@ -60,6 +60,7 @@ pub fn start() -> Result<(), JsValue> {
         index_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
         shader: Shader {
             camera_index: gl.get_uniform_location(&shaderProgram, "camera").unwrap(),
+            color_index: gl.get_uniform_location(&shaderProgram, "color").unwrap(),
             coordinate_index: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
             program: shaderProgram,
         },
@@ -115,6 +116,7 @@ fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), Js
     // let Buffers(positionBuffer, colorBuffer, indexBuffer) = buffers;
     gl.clear_color(0.0, 0.0, 0.0, 1.0);
     gl.clear_depth(1.0);
+    gl.blend_func(xD::SRC_ALPHA, xD::ONE_MINUS_SRC_ALPHA);
     // gl.enable(WebGlRenderingContext::DEPTH_TEST); // Enable depth testing
     // gl.depth_func(WebGlRenderingContext::LEQUAL); // Near things obscure far things
 
@@ -134,10 +136,8 @@ fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), Js
     mat4::translate(&mut tmp2, &tmp1, &[-5.0, -5.0, 0.0]);
     renderer.camera = tmp2;
 
-    let indices: [u16; _] = [0, 1, 2];
-
     for tri in game.next_frame() {
-        renderer.triangle(&tri, &indices)?;
+        renderer.triangle(&tri)?;
     }
 
     // buffers

@@ -30,6 +30,8 @@ wee_alloc = { version = "0.4.2", optional = true }
 svg = "0.13.0"
 insta = "1.23.0"
 earcutr = "0.3.0"
+regex = "1.7.0"
+hex = "0.4.3"
 
 
 [dependencies.web-sys]

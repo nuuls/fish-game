@@ -1,7 +1,9 @@
 use crate::game::Triangle;
 use crate::log;
+use regex::Regex;
 use svg;
 use svg::node::element::path::{Command, Data, Position};
+use svg::node::element::Style;
 use svg::parser::Event;
 
 pub struct Level {
@@ -34,12 +36,18 @@ impl Level {
 
     fn parse(parser: svg::parser::Parser) -> Level {
         let mut points: Vec<Vec<f32>> = vec![vec![0.0, 0.0]];
+        let mut color = [1.0, 0.0, 1.0, 1.0];
 
         for event in parser {
             match event {
                 Event::Tag("path", _, attributes) => {
                     let data = attributes.get("d").unwrap();
                     let data = Data::parse(data).unwrap();
+
+                    color = color_from_style(
+                        attributes.get("style").map(|v| Style::new(v.to_string())),
+                    )
+                    .unwrap_or(color);
 
                     let mut current_pos = (0.0, 0.0);
 
@@ -117,6 +125,11 @@ impl Level {
                     let width = attributes.get("width").unwrap().parse::<f32>().unwrap();
                     let height = attributes.get("height").unwrap().parse::<f32>().unwrap();
 
+                    color = color_from_style(
+                        attributes.get("style").map(|v| Style::new(v.to_string())),
+                    )
+                    .unwrap_or(color);
+
                     let path = vec![
                         // first triangle
                         x,
@@ -151,17 +164,20 @@ impl Level {
             let path_triangles = earcutr::earcut(path.as_slice(), &vec![], 2);
 
             for [a, b, c] in path_triangles.array_chunks::<3>() {
-                triangles.push([
-                    path[*a * 2] as f32,
-                    path[*a * 2 + 1] as f32,
-                    0.0 as f32,
-                    path[*b * 2] as f32,
-                    path[*b * 2 + 1] as f32,
-                    0.0 as f32,
-                    path[*c * 2] as f32,
-                    path[*c * 2 + 1] as f32,
-                    0.0 as f32,
-                ]);
+                triangles.push(Triangle {
+                    coords: [
+                        path[*a * 2] as f32,
+                        path[*a * 2 + 1] as f32,
+                        0.0 as f32,
+                        path[*b * 2] as f32,
+                        path[*b * 2 + 1] as f32,
+                        0.0 as f32,
+                        path[*c * 2] as f32,
+                        path[*c * 2 + 1] as f32,
+                        0.0 as f32,
+                    ],
+                    color,
+                });
             }
         }
 
@@ -171,6 +187,24 @@ impl Level {
     pub fn triangles(&self) -> &Vec<Triangle> {
         &self.triangles
     }
+}
+
+fn color_from_style(style: Option<Style>) -> Option<[f32; 4]> {
+    let style = style?;
+    let style_str = style.to_string();
+
+    let re = Regex::new(r"fill:#([0-9a-z]{6})").unwrap();
+
+    let rgb_str = re.captures(&style_str)?.get(1)?.as_str();
+
+    let rgb = hex::decode(&rgb_str.as_bytes()).unwrap();
+    let vals: Vec<f32> = rgb.into_iter().map(|v| v as f32 / 255.0).collect();
+
+    let mut out = [1.0; 4];
+    for i in 0..3 {
+        out[i] = vals[i];
+    }
+    Some(out)
 }
 
 #[cfg(test)]
@@ -185,6 +219,10 @@ mod tests {
 
         let level = super::Level::load_from_svg_str(content);
 
-        insta::assert_debug_snapshot!(&level.triangles);
+        insta::assert_debug_snapshot!(&level
+            .triangles
+            .iter()
+            .map(|t| t.coords)
+            .collect::<Vec<_>>());
     }
 }
