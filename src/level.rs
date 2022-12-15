@@ -271,4 +271,17 @@ mod tests {
             .map(|t| t.coords)
             .collect::<Vec<_>>());
     }
+
+    #[test]
+    fn bigger_example() {
+        let content = include_str!("../test_data/map1.svg");
+
+        let level = super::Level::load_from_svg_str(content);
+
+        insta::assert_debug_snapshot!(&level
+            .triangles
+            .iter()
+            .map(|t| t.coords)
+            .collect::<Vec<_>>());
+    }
 }
