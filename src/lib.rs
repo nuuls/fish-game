@@ -9,7 +9,6 @@ use drawing::Shader;
 use drawing::WaterShader;
 use std::cell::RefCell;
 use std::rc::Rc;
-use types::Entity;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, WebGlBuffer, WebGlProgram, WebGlRenderingContext};
@@ -113,9 +112,10 @@ pub fn start() -> Result<(), JsValue> {
                 *dX.borrow_mut() *= AMORTIZATION;
                 *dY.borrow_mut() *= AMORTIZATION;
             }
-            // drawScene(&gl.clone(), programmInfo.clone(), buffers.clone()).unwrap();
-            renderer.time = performance.now() as f32 / 1000.0;
-            drawScene(&mut renderer, &mut game).unwrap();
+            let now = performance.now() as f32 / 1000.0;
+            let time_passed = now - renderer.time;
+            renderer.time = now;
+            draw_scene(&mut renderer, &mut game, time_passed).unwrap();
             // Schedule ourself for another requestAnimationFrame callback.
             request_animation_frame(f.borrow().as_ref().unwrap());
         }) as Box<dyn FnMut(f32)>));
@@ -139,7 +139,11 @@ fn initShaderProgram(
 
 #[allow(non_snake_case)]
 #[allow(dead_code)]
-fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), JsValue> {
+fn draw_scene(
+    renderer: &mut drawing::Renderer,
+    game: &mut Game,
+    time_passed: f32,
+) -> Result<(), JsValue> {
     use WebGlRenderingContext as xD;
     let gl = &renderer.gl;
 
@@ -166,7 +170,7 @@ fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), Js
     mat4::translate(&mut tmp2, &tmp1, &[-30.0, -15.0, 0.0]);
     renderer.camera = tmp2;
 
-    for en in game.next_frame() {
+    for en in game.next_frame(time_passed) {
         for tri in en.triangles() {
             renderer.triangle(&tri, en.position())?;
         }

@@ -1,4 +1,9 @@
-use crate::types::{Entity, Triangle};
+use js_sys::Math::random;
+
+use crate::{
+    log,
+    types::{Entity, Triangle},
+};
 
 pub struct Player {
     id: String,
@@ -15,8 +20,8 @@ impl Entity for Player {
         &self.triangles
     }
 
-    fn update(&mut self, _time_passed: f32) {
-        self.position.0 += 0.001;
+    fn update(&mut self, time_passed: f32) {
+        self.position.0 += time_passed;
     }
 
     fn position(&self) -> (f32, f32) {

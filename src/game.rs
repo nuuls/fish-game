@@ -57,7 +57,7 @@ impl ShitItem {
 
 impl Game {
     pub fn new() -> Game {
-        let mut entities: Vec<Box<dyn Entity>> = random_shit_items(3)
+        let mut entities: Vec<Box<dyn Entity>> = random_shit_items(1000)
             .into_iter()
             .map(|si| Box::new(si) as Box<dyn Entity>)
             .collect();
@@ -75,11 +75,11 @@ impl Game {
         }
     }
 
-    pub fn next_frame(&mut self) -> &Vec<Box<dyn Entity>> {
+    pub fn next_frame(&mut self, time_passed: f32) -> &Vec<Box<dyn Entity>> {
         self.render_buffer.clear();
         // data
         for item in &mut self.entities {
-            item.update(0.0);
+            item.update(time_passed);
         }
 
         self.handle_fps();
