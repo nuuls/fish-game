@@ -93,6 +93,10 @@ pub fn start() -> Result<(), JsValue> {
     let _event_target: EventTarget = canvas.into();
 
     let mut game = Game::new();
+    let window = web_sys::window().expect("should have a window in this context");
+    let performance = window
+        .performance()
+        .expect("performance should be available");
 
     // RequestAnimationFrame
     {
@@ -106,6 +110,7 @@ pub fn start() -> Result<(), JsValue> {
                 *dY.borrow_mut() *= AMORTIZATION;
             }
             // drawScene(&gl.clone(), programmInfo.clone(), buffers.clone()).unwrap();
+            renderer.time = performance.now() as f32 / 1000.0;
             drawScene(&mut renderer, &mut game).unwrap();
             // Schedule ourself for another requestAnimationFrame callback.
             request_animation_frame(f.borrow().as_ref().unwrap());
@@ -134,14 +139,14 @@ fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), Js
     use WebGlRenderingContext as xD;
     let gl = &renderer.gl;
 
-    // let Buffers(positionBuffer, colorBuffer, indexBuffer) = buffers;
-    gl.clear_color(0.0, 0.0, 0.0, 1.0);
-    gl.clear_depth(1.0);
+    gl.enable(xD::BLEND);
     gl.blend_func(xD::SRC_ALPHA, xD::ONE_MINUS_SRC_ALPHA);
     // gl.enable(WebGlRenderingContext::DEPTH_TEST); // Enable depth testing
     // gl.depth_func(WebGlRenderingContext::LEQUAL); // Near things obscure far things
 
     gl.clear(xD::COLOR_BUFFER_BIT | xD::DEPTH_BUFFER_BIT);
+    gl.clear_color(0.4, 0.7, 0.9, 1.0);
+    gl.clear_depth(1.0);
 
     let canvas: web_sys::HtmlCanvasElement = gl
         .canvas()
@@ -149,12 +154,12 @@ fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), Js
         .dyn_into::<web_sys::HtmlCanvasElement>()?;
     gl.viewport(0, 0, canvas.width() as i32, canvas.height() as i32);
     let aspect: f32 = canvas.width() as f32 / canvas.height() as f32;
-    let zoom = 1.0 / 50.0;
+    let zoom = 1.0 / 20.0;
 
     let mut tmp1 = mat4::new_identity();
     let mut tmp2 = mat4::new_identity();
     mat4::scale(&mut tmp1, &tmp2, &[zoom, -zoom * aspect, 1.0]);
-    mat4::translate(&mut tmp2, &tmp1, &[-5.0, -5.0, 0.0]);
+    mat4::translate(&mut tmp2, &tmp1, &[-30.0, -15.0, 0.0]);
     renderer.camera = tmp2;
 
     for tri in game.next_frame() {

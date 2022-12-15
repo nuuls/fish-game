@@ -8,10 +8,12 @@ uniform float time;
 varying lowp vec4 v_color;
 varying lowp float v_time;
 varying lowp float v_water_y_level;
+varying lowp vec3 v_world_position;
 
 void main(void) {
     gl_Position = camera * coordinates;
     v_color = color;
     v_time = time;
     v_water_y_level = water_y_level;
+    v_world_position = coordinates.xyz;
 }

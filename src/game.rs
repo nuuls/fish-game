@@ -111,7 +111,7 @@ fn random_shit_items(n: usize) -> Vec<ShitItem> {
             let mut t = [0.0; 9];
             for i in 0..3 {
                 t[i * 3] = (random() * 23.0 + 23.0) as f32;
-                t[i * 3 + 1] = (random() * 1.0 + 17.5) as f32;
+                t[i * 3 + 1] = (random() * 1.0 + 10.5) as f32;
             }
             ShitItem {
                 id: format!("shit_item-{}", n),

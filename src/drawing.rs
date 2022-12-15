@@ -2,6 +2,7 @@ use wasm_bindgen::JsValue;
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation};
 
 use crate::{
+    log,
     types::Color,
     types::Triangle,
     utils::{float_32_array, uint_16_array},
@@ -57,6 +58,9 @@ impl Renderer {
 
         self.gl
             .uniform1f(Some(&self.water_shader.water_y_level_index), water_y_level);
+        self.gl
+            .uniform1f(Some(&self.water_shader.time_index), self.time);
+
         Ok(())
     }
 
@@ -93,8 +97,15 @@ impl Renderer {
             // spaghetti is served 🍝
             let water_y_level = triangle.coords[1]
                 .min(triangle.coords[4])
-                .min(triangle.coords[7])
-                + 0.1;
+                .min(triangle.coords[7]);
+
+            // let water_y_level = mat4::(self.camera,
+
+            log!(
+                "water_y_level: {} triangle.coords[0]: {}",
+                water_y_level,
+                triangle.coords[0]
+            );
 
             self.use_water_shader(&triangle.color, water_y_level)?;
         } else {
