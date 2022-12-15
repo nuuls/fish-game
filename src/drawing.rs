@@ -2,7 +2,6 @@ use wasm_bindgen::JsValue;
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation};
 
 use crate::{
-    log,
     types::Color,
     types::Triangle,
     utils::{float_32_array, uint_16_array},

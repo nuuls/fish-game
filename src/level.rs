@@ -1,7 +1,7 @@
 use std::borrow::{Borrow, BorrowMut};
-use std::cell::{Cell, RefCell};
+use std::cell::{RefCell};
 
-use crate::log;
+
 use crate::types::{Color, Entity, Triangle};
 use regex::Regex;
 use svg;

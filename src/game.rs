@@ -28,7 +28,7 @@ impl Entity for ShitItem {
     fn triangles(&self) -> &Vec<crate::types::Triangle> {
         &self.triangles
     }
-    fn update(&mut self, time_passed: f32) {
+    fn update(&mut self, _time_passed: f32) {
         self.update();
     }
 }

@@ -15,7 +15,7 @@ impl Entity for Player {
         &self.triangles
     }
 
-    fn update(&mut self, time_passed: f32) {
+    fn update(&mut self, _time_passed: f32) {
         self.position.0 += 0.001;
     }
 

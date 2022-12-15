@@ -3,7 +3,7 @@ pub type Color = [f32; 4];
 pub trait Entity {
     fn id(&self) -> &String;
     fn triangles(&self) -> &Vec<Triangle>;
-    fn update(&mut self, time_passed: f32) {}
+    fn update(&mut self, _time_passed: f32) {}
     fn position(&self) -> (f32, f32) {
         return (0.0, 0.0);
     }
