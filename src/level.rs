@@ -1,5 +1,6 @@
 use crate::game::Triangle;
 use crate::log;
+use crate::types::Color;
 use regex::Regex;
 use svg;
 use svg::node::element::path::{Command, Data, Position};
@@ -35,8 +36,7 @@ impl Level {
     }
 
     fn parse(parser: svg::parser::Parser) -> Level {
-        let mut points: Vec<Vec<f32>> = vec![vec![0.0, 0.0]];
-        let mut color = [1.0, 0.0, 1.0, 1.0];
+        let mut polygons: Vec<(Vec<f32>, Color)> = vec![(vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0])];
 
         for event in parser {
             match event {
@@ -44,10 +44,10 @@ impl Level {
                     let data = attributes.get("d").unwrap();
                     let data = Data::parse(data).unwrap();
 
-                    color = color_from_style(
+                    let color = color_from_style(
                         attributes.get("style").map(|v| Style::new(v.to_string())),
                     )
-                    .unwrap_or(color);
+                    .unwrap_or([1.0, 0.0, 1.0, 1.0]);
 
                     let mut current_pos = (0.0, 0.0);
 
@@ -66,52 +66,52 @@ impl Level {
                                     })
                                     .unwrap_or((0.0, 0.0));
 
-                                points.push(vec![start.0, start.1]);
+                                polygons.push((vec![start.0, start.1], color));
                             }
                             Command::Line(position, parameters) => {
                                 parameters.array_chunks::<2>().for_each(|[x, y]| {
-                                    if let Some(path) = points.last_mut() {
+                                    if let Some(polygon) = polygons.last_mut() {
                                         let p = update_point(
                                             &mut current_pos,
                                             *position,
                                             (Some(*x), Some(*y)),
                                         );
 
-                                        path.push(p.0);
-                                        path.push(p.1);
+                                        polygon.0.push(p.0);
+                                        polygon.0.push(p.1);
                                     };
                                 });
                             }
                             Command::HorizontalLine(position, parameters) => {
                                 parameters.iter().for_each(|x| {
-                                    if let Some(path) = points.last_mut() {
+                                    if let Some(polygon) = polygons.last_mut() {
                                         let p = update_point(
                                             &mut current_pos,
                                             *position,
                                             (Some(*x), None),
                                         );
 
-                                        path.push(p.0);
-                                        path.push(p.1);
+                                        polygon.0.push(p.0);
+                                        polygon.0.push(p.1);
                                     };
                                 });
                             }
                             Command::VerticalLine(position, parameters) => {
                                 parameters.iter().for_each(|y| {
-                                    if let Some(path) = points.last_mut() {
+                                    if let Some(polygon) = polygons.last_mut() {
                                         let p = update_point(
                                             &mut current_pos,
                                             *position,
                                             (None, Some(*y)),
                                         );
 
-                                        path.push(p.0);
-                                        path.push(p.1);
+                                        polygon.0.push(p.0);
+                                        polygon.0.push(p.1);
                                     };
                                 });
                             }
                             Command::Close => {
-                                points.push(vec![0.0, 0.0]);
+                                polygons.push((vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0]));
                             }
                             _ => {
                                 log!("unsupported svg path command: {:?}", command);
@@ -125,10 +125,10 @@ impl Level {
                     let width = attributes.get("width").unwrap().parse::<f32>().unwrap();
                     let height = attributes.get("height").unwrap().parse::<f32>().unwrap();
 
-                    color = color_from_style(
+                    let color = color_from_style(
                         attributes.get("style").map(|v| Style::new(v.to_string())),
                     )
-                    .unwrap_or(color);
+                    .unwrap_or([1.0, 0.0, 1.0, 1.0]);
 
                     let path = vec![
                         // first triangle
@@ -147,7 +147,7 @@ impl Level {
                         y + height,
                     ];
 
-                    points.push(path);
+                    polygons.push((path, color));
                 }
                 _ => {}
             }
@@ -155,28 +155,28 @@ impl Level {
 
         let mut triangles: Vec<Triangle> = vec![];
 
-        for path in points.iter() {
+        for polygon in polygons.iter() {
             // not even a triangle
-            if path.len() < 6 {
+            if polygon.0.len() < 6 {
                 continue;
             }
 
-            let path_triangles = earcutr::earcut(path.as_slice(), &vec![], 2);
+            let path_triangles = earcutr::earcut(polygon.0.as_slice(), &vec![], 2);
 
             for [a, b, c] in path_triangles.array_chunks::<3>() {
                 triangles.push(Triangle {
                     coords: [
-                        path[*a * 2] as f32,
-                        path[*a * 2 + 1] as f32,
+                        polygon.0[*a * 2] as f32,
+                        polygon.0[*a * 2 + 1] as f32,
                         0.0 as f32,
-                        path[*b * 2] as f32,
-                        path[*b * 2 + 1] as f32,
+                        polygon.0[*b * 2] as f32,
+                        polygon.0[*b * 2 + 1] as f32,
                         0.0 as f32,
-                        path[*c * 2] as f32,
-                        path[*c * 2 + 1] as f32,
+                        polygon.0[*c * 2] as f32,
+                        polygon.0[*c * 2 + 1] as f32,
                         0.0 as f32,
                     ],
-                    color,
+                    color: polygon.1,
                 });
             }
         }

@@ -14,6 +14,7 @@ use web_sys::{EventTarget, WebGlBuffer, WebGlProgram, WebGlRenderingContext};
 mod drawing;
 mod game;
 mod level;
+mod types;
 use game::Game;
 
 #[allow(dead_code)]
