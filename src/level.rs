@@ -1,3 +1,6 @@
+use std::borrow::{Borrow, BorrowMut};
+use std::cell::{Cell, RefCell};
+
 use crate::log;
 use crate::types::{Color, Entity, Triangle};
 use regex::Regex;
@@ -37,7 +40,8 @@ impl Level {
     }
 
     fn parse(parser: svg::parser::Parser) -> Level {
-        let mut polygons: Vec<(Vec<f32>, Color)> = vec![(vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0])];
+        let polygons: RefCell<Vec<(Vec<f32>, Color)>> =
+            RefCell::new(vec![(vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0])]);
         let mut player_pos = (0.0, 0.0);
 
         for event in parser {
@@ -51,74 +55,86 @@ impl Level {
                     )
                     .unwrap_or([1.0, 0.0, 1.0, 1.0]);
 
-                    let mut current_pos = (0.0, 0.0);
+                    let current_pos = RefCell::new((0.0, 0.0));
+
+                    let push_point = |position: Position, x: Option<f32>, y: Option<f32>| {
+                        let p =
+                            update_point(current_pos.borrow_mut().borrow_mut(), position, (x, y));
+
+                        if let Some(polygon) = polygons.borrow_mut().last_mut() {
+                            polygon.0.push(p.0);
+                            polygon.0.push(p.1);
+                        };
+                    };
 
                     for command in data.iter() {
                         match command {
                             Command::Move(position, parameters) => {
-                                let mut point_it = parameters.array_chunks::<2>().map(|[x, y]| {
-                                    update_point(&mut current_pos, *position, (Some(*x), Some(*y)))
-                                });
+                                let mut point_it = parameters.array_chunks::<2>();
 
-                                // first is move_to
-                                let start = point_it.next().unwrap_or((0.0, 0.0));
-                                polygons.push((vec![start.0, start.1], color));
+                                if let Some([x, y]) = point_it.next() {
+                                    let mut current_pos = current_pos.borrow_mut();
 
-                                // subsequent are line_to
-                                point_it.for_each(|p| {
-                                    if let Some(polygon) = polygons.last_mut() {
-                                        polygon.0.push(p.0);
-                                        polygon.0.push(p.1);
-                                    };
-                                });
+                                    update_point(
+                                        current_pos.borrow_mut(),
+                                        *position,
+                                        (Some(*x), Some(*y)),
+                                    );
+                                    polygons
+                                        .borrow_mut()
+                                        .push((vec![current_pos.0, current_pos.1], color));
+                                }
+
+                                for [x, y] in point_it {
+                                    push_point(*position, Some(*x), Some(*y));
+                                }
                             }
                             Command::Line(position, parameters) => {
-                                parameters.array_chunks::<2>().for_each(|[x, y]| {
-                                    if let Some(polygon) = polygons.last_mut() {
-                                        let p = update_point(
-                                            &mut current_pos,
-                                            *position,
-                                            (Some(*x), Some(*y)),
-                                        );
-
-                                        polygon.0.push(p.0);
-                                        polygon.0.push(p.1);
-                                    };
-                                });
+                                for [x, y] in parameters.array_chunks::<2>() {
+                                    push_point(*position, Some(*x), Some(*y));
+                                }
                             }
                             Command::HorizontalLine(position, parameters) => {
-                                parameters.iter().for_each(|x| {
-                                    if let Some(polygon) = polygons.last_mut() {
-                                        let p = update_point(
-                                            &mut current_pos,
-                                            *position,
-                                            (Some(*x), None),
-                                        );
-
-                                        polygon.0.push(p.0);
-                                        polygon.0.push(p.1);
-                                    };
-                                });
+                                for x in parameters.iter() {
+                                    push_point(*position, Some(*x), None);
+                                }
                             }
                             Command::VerticalLine(position, parameters) => {
-                                parameters.iter().for_each(|y| {
-                                    if let Some(polygon) = polygons.last_mut() {
-                                        let p = update_point(
-                                            &mut current_pos,
-                                            *position,
-                                            (None, Some(*y)),
-                                        );
-
-                                        polygon.0.push(p.0);
-                                        polygon.0.push(p.1);
-                                    };
-                                });
+                                for y in parameters.iter() {
+                                    push_point(*position, None, Some(*y));
+                                }
+                            }
+                            Command::CubicCurve(position, parameters) => {
+                                for [_x1, _y1, _x2, _y2, x, y] in parameters.array_chunks::<6>() {
+                                    push_point(*position, Some(*x), Some(*y));
+                                }
+                            }
+                            Command::SmoothCubicCurve(position, parameters) => {
+                                for [_x1, _x2, x, y] in parameters.array_chunks::<4>() {
+                                    push_point(*position, Some(*x), Some(*y));
+                                }
+                            }
+                            Command::QuadraticCurve(position, parameters) => {
+                                for [_x1, _y1, x, y] in parameters.array_chunks::<4>() {
+                                    push_point(*position, Some(*x), Some(*y));
+                                }
+                            }
+                            Command::SmoothQuadraticCurve(position, parameters) => {
+                                for [x, y] in parameters.array_chunks::<2>() {
+                                    push_point(*position, Some(*x), Some(*y));
+                                }
+                            }
+                            Command::EllipticalArc(position, parameters) => {
+                                for [_rx, _ry, _x_axis_rotation, _large_arc_flag, _sweep_flag, x, y] in
+                                    parameters.array_chunks::<7>()
+                                {
+                                    push_point(*position, Some(*x), Some(*y));
+                                }
                             }
                             Command::Close => {
-                                polygons.push((vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0]));
-                            }
-                            _ => {
-                                log!("unsupported svg path command: {:?}", command);
+                                polygons
+                                    .borrow_mut()
+                                    .push((vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0]));
                             }
                         }
                     }
@@ -160,7 +176,7 @@ impl Level {
                         y + height,
                     ];
 
-                    polygons.push((path, color));
+                    polygons.borrow_mut().push((path, color));
                 }
                 _ => {}
             }
@@ -168,7 +184,7 @@ impl Level {
 
         let mut triangles: Vec<Triangle> = vec![];
 
-        for polygon in polygons.iter() {
+        for polygon in polygons.borrow().iter() {
             // not even a triangle
             if polygon.0.len() < 6 {
                 continue;
