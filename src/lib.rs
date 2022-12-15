@@ -35,6 +35,9 @@ fn into_shader(gl: &WebGlRenderingContext, program: WebGlProgram) -> Shader {
     Shader {
         camera_index: gl.get_uniform_location(&program, "camera").unwrap(),
         color_index: gl.get_uniform_location(&program, "color").unwrap(),
+        position_offset_index: gl
+            .get_uniform_location(&program, "position_offset")
+            .unwrap(),
         coordinate_index: gl.get_attrib_location(&program, "coordinates") as u32,
         program: program,
     }
@@ -163,8 +166,10 @@ fn drawScene(renderer: &mut drawing::Renderer, game: &mut Game) -> Result<(), Js
     mat4::translate(&mut tmp2, &tmp1, &[-30.0, -15.0, 0.0]);
     renderer.camera = tmp2;
 
-    for tri in game.next_frame() {
-        renderer.triangle(&tri)?;
+    for en in game.next_frame() {
+        for tri in en.triangles() {
+            renderer.triangle(&tri, en.position())?;
+        }
     }
 
     // buffers

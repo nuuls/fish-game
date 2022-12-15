@@ -4,8 +4,8 @@ pub trait Entity {
     fn id(&self) -> &String;
     fn triangles(&self) -> &Vec<Triangle>;
     fn update(&mut self, time_passed: f32) {}
-    fn position(&self) -> Option<(f32, f32)> {
-        None
+    fn position(&self) -> (f32, f32) {
+        return (0.0, 0.0);
     }
 }
 

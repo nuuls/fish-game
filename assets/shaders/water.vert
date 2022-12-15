@@ -4,6 +4,7 @@ uniform vec4 color;
 uniform mat4 camera;
 uniform float water_y_level;
 uniform float time;
+uniform vec2 position_offset;
 
 varying lowp vec4 v_color;
 varying lowp float v_time;
@@ -11,7 +12,7 @@ varying lowp float v_water_y_level;
 varying lowp vec3 v_world_position;
 
 void main(void) {
-    gl_Position = camera * coordinates;
+    gl_Position = camera * (coordinates + vec4(position_offset, 0.0, 0.0));
     v_color = color;
     v_time = time;
     v_water_y_level = water_y_level;

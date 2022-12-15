@@ -75,19 +75,16 @@ impl Game {
         }
     }
 
-    pub fn next_frame(&mut self) -> &Vec<Triangle> {
+    pub fn next_frame(&mut self) -> &Vec<Box<dyn Entity>> {
         self.render_buffer.clear();
         // data
         for item in &mut self.entities {
             item.update(0.0);
-            for tri in item.triangles() {
-                self.render_buffer.push(tri.clone());
-            }
         }
 
         self.handle_fps();
 
-        &self.render_buffer
+        &self.entities
     }
 
     fn handle_fps(&mut self) {

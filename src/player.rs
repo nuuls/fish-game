@@ -16,14 +16,11 @@ impl Entity for Player {
     }
 
     fn update(&mut self, time_passed: f32) {
-        self.position.0 += 0.00001;
-        for i in 0..3 {
-            self.triangles[0].coords[i * 3] += 0.001;
-        }
+        self.position.0 += 0.001;
     }
 
-    fn position(&self) -> Option<(f32, f32)> {
-        Some(self.position)
+    fn position(&self) -> (f32, f32) {
+        self.position
     }
 }
 
@@ -34,15 +31,9 @@ impl Player {
             position,
             triangles: vec![Triangle {
                 coords: [
-                    position.0,
-                    position.1,
-                    1.0,
-                    position.0 + 3.0,
-                    position.1,
-                    1.0,
-                    position.0,
-                    position.1 + 2.0,
-                    1.0,
+                    0.0, 0.0, 1.0, //
+                    3.0, 0.0, 1.0, //
+                    0.0, 2.0, 1.0, //
                 ],
                 color: [1.0, 0.0, 0.0, 1.0],
             }],
