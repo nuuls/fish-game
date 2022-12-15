@@ -3,11 +3,11 @@ use js_sys::Math::random;
 use crate::{
     level::Level,
     log,
+    player::Player,
     types::{Entity, Triangle},
 };
 
 pub struct Game {
-    level: Level,
     render_buffer: Vec<Triangle>,
     entities: Vec<Box<dyn Entity>>,
 
@@ -39,7 +39,7 @@ impl ShitItem {
         for n in 0..9 {
             let bounds = match n % 3 {
                 0 => (23.0, 46.0),
-                1 => (17.5, 18.0),
+                1 => (5.0, 10.0),
                 _ => (0.0, 0.0),
             };
             let hit_edge = tri[n] <= bounds.0 || tri[n] >= bounds.1;
@@ -57,13 +57,19 @@ impl ShitItem {
 
 impl Game {
     pub fn new() -> Game {
+        let mut entities: Vec<Box<dyn Entity>> = random_shit_items(3)
+            .into_iter()
+            .map(|si| Box::new(si) as Box<dyn Entity>)
+            .collect();
+
+        let level = Level::load_from_svg_str(include_str!("../assets/map.svg"));
+        let player = Box::new(Player::new(level.player_pos()));
+        entities.push(Box::new(level));
+        entities.push(player);
+
         Game {
             render_buffer: vec![],
-            entities: random_shit_items(10)
-                .into_iter()
-                .map(|si| Box::new(si) as Box<dyn Entity>)
-                .collect(),
-            level: Level::load_from_svg_str(include_str!("../assets/map.svg")),
+            entities,
             frames_drawn: 0,
             last_fps_print: 0.0,
         }
@@ -71,11 +77,6 @@ impl Game {
 
     pub fn next_frame(&mut self) -> &Vec<Triangle> {
         self.render_buffer.clear();
-        let level_triangles = self.level.triangles();
-        for tri in level_triangles {
-            self.render_buffer.push(tri.clone())
-        }
-
         // data
         for item in &mut self.entities {
             item.update(0.0);
@@ -109,9 +110,13 @@ fn random_shit_items(n: usize) -> Vec<ShitItem> {
     (0..n)
         .map(|_| {
             let mut t = [0.0; 9];
+            let mut moving = [0.0; 9];
             for i in 0..3 {
                 t[i * 3] = (random() * 23.0 + 23.0) as f32;
-                t[i * 3 + 1] = (random() * 1.0 + 10.5) as f32;
+                t[i * 3 + 1] = (random() * 5.0 + 5.0) as f32;
+
+                moving[i * 3] = (random() * 0.01 - 0.01) as f32;
+                moving[i * 3 + 1] = (random() * 0.01 - 0.01) as f32;
             }
             ShitItem {
                 id: format!("shit_item-{}", n),
@@ -119,7 +124,7 @@ fn random_shit_items(n: usize) -> Vec<ShitItem> {
                     coords: t,
                     color: [0.9; 4],
                 }],
-                moving: [0.01; 9],
+                moving,
             }
         })
         .collect()

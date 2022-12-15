@@ -16,6 +16,7 @@ use web_sys::{EventTarget, WebGlBuffer, WebGlProgram, WebGlRenderingContext};
 mod drawing;
 mod game;
 mod level;
+mod player;
 mod types;
 use game::Game;
 

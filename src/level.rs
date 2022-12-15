@@ -1,5 +1,5 @@
 use crate::log;
-use crate::types::{Color, Triangle};
+use crate::types::{Color, Entity, Triangle};
 use regex::Regex;
 use svg;
 use svg::node::element::path::{Command, Data, Position};
@@ -7,7 +7,9 @@ use svg::node::element::Style;
 use svg::parser::Event;
 
 pub struct Level {
+    id: String,
     triangles: Vec<Triangle>,
+    _player_pos: (f32, f32),
 }
 
 fn update_point(
@@ -36,6 +38,7 @@ impl Level {
 
     fn parse(parser: svg::parser::Parser) -> Level {
         let mut polygons: Vec<(Vec<f32>, Color)> = vec![(vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0])];
+        let mut player_pos = (0.0, 0.0);
 
         for event in parser {
             match event {
@@ -131,6 +134,15 @@ impl Level {
                     )
                     .unwrap_or([1.0, 0.0, 1.0, 1.0]);
 
+                    match attributes.get("id") {
+                        Some(id) => {
+                            if id.to_string() == "player" {
+                                player_pos = (x, y);
+                            }
+                        }
+                        None => {}
+                    }
+
                     let path = vec![
                         // first triangle
                         x,
@@ -182,10 +194,27 @@ impl Level {
             }
         }
 
-        Level { triangles }
+        Level {
+            id: "level".to_string(),
+            triangles,
+            _player_pos: player_pos,
+        }
     }
 
     pub fn triangles(&self) -> &Vec<Triangle> {
+        &self.triangles
+    }
+
+    pub fn player_pos(&self) -> (f32, f32) {
+        self._player_pos
+    }
+}
+
+impl Entity for Level {
+    fn id(&self) -> &String {
+        &self.id
+    }
+    fn triangles(&self) -> &Vec<Triangle> {
         &self.triangles
     }
 }
