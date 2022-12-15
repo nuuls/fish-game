@@ -9,6 +9,8 @@ pub struct Player {
     id: String,
     position: (f32, f32),
     triangles: Vec<Triangle>,
+
+    movement: f32,
 }
 
 impl Entity for Player {
@@ -21,11 +23,21 @@ impl Entity for Player {
     }
 
     fn update(&mut self, time_passed: f32) {
-        self.position.0 += time_passed;
+        self.position.0 += time_passed * self.movement * 3.0;
     }
 
     fn position(&self) -> (f32, f32) {
         self.position
+    }
+
+    fn on_user_input(&mut self, input: &crate::user_input::UserInput) {
+        if input.move_left {
+            self.movement = -1.0;
+        } else if input.move_right {
+            self.movement = 1.0;
+        } else {
+            self.movement = 0.0;
+        }
     }
 }
 
@@ -42,6 +54,7 @@ impl Player {
                 ],
                 color: [1.0, 0.0, 0.0, 1.0],
             }],
+            movement: 0.0,
         }
     }
 }

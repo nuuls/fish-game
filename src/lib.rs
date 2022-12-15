@@ -17,6 +17,7 @@ mod game;
 mod level;
 mod player;
 mod types;
+mod user_input;
 use game::Game;
 
 #[allow(dead_code)]

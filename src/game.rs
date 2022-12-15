@@ -5,11 +5,13 @@ use crate::{
     log,
     player::Player,
     types::{Entity, Triangle},
+    user_input::{self, InputHandler},
 };
 
 pub struct Game {
     render_buffer: Vec<Triangle>,
     entities: Vec<Box<dyn Entity>>,
+    input_handler: InputHandler,
 
     last_fps_print: f64,
     frames_drawn: usize,
@@ -67,9 +69,13 @@ impl Game {
         entities.push(Box::new(level));
         entities.push(player);
 
+        let mut input_handler = user_input::InputHandler::new();
+        input_handler.attach();
+
         Game {
             render_buffer: vec![],
             entities,
+            input_handler,
             frames_drawn: 0,
             last_fps_print: 0.0,
         }
@@ -78,7 +84,9 @@ impl Game {
     pub fn next_frame(&mut self, time_passed: f32) -> &Vec<Box<dyn Entity>> {
         self.render_buffer.clear();
         // data
+        let input = self.input_handler.current_state();
         for item in &mut self.entities {
+            item.on_user_input(&input);
             item.update(time_passed);
         }
 

@@ -1,3 +1,5 @@
+use crate::user_input::UserInput;
+
 pub type Color = [f32; 4];
 
 pub trait Entity {
@@ -7,6 +9,7 @@ pub trait Entity {
     fn position(&self) -> (f32, f32) {
         return (0.0, 0.0);
     }
+    fn on_user_input(&mut self, input: &UserInput) {}
 }
 
 #[derive(Clone)]
