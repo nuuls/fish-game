@@ -53,19 +53,21 @@ impl Level {
                     for command in data.iter() {
                         match command {
                             Command::Move(position, parameters) => {
-                                let start = parameters
-                                    .array_chunks::<2>()
-                                    .last()
-                                    .map(|[x, y]| {
-                                        update_point(
-                                            &mut current_pos,
-                                            *position,
-                                            (Some(*x), Some(*y)),
-                                        )
-                                    })
-                                    .unwrap_or((0.0, 0.0));
+                                let mut point_it = parameters.array_chunks::<2>().map(|[x, y]| {
+                                    update_point(&mut current_pos, *position, (Some(*x), Some(*y)))
+                                });
 
+                                // first is move_to
+                                let start = point_it.next().unwrap_or((0.0, 0.0));
                                 polygons.push((vec![start.0, start.1], color));
+
+                                // subsequent are line_to
+                                point_it.for_each(|p| {
+                                    if let Some(polygon) = polygons.last_mut() {
+                                        polygon.0.push(p.0);
+                                        polygon.0.push(p.1);
+                                    };
+                                });
                             }
                             Command::Line(position, parameters) => {
                                 parameters.array_chunks::<2>().for_each(|[x, y]| {
