@@ -8,6 +8,7 @@ extern crate web_sys;
 use drawing::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
+use types::Entity;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, WebGlBuffer, WebGlProgram, WebGlRenderingContext};

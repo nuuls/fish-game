@@ -1,40 +1,41 @@
 use js_sys::Math::random;
 
-use crate::{level::Level, log};
+use crate::{
+    level::Level,
+    log,
+    types::{Entity, Triangle},
+};
 
 pub struct Game {
     level: Level,
     render_buffer: Vec<Triangle>,
-    game_items: Vec<ShitItem>,
+    entities: Vec<Box<dyn Entity>>,
 
     last_fps_print: f64,
     frames_drawn: usize,
 }
 
-pub trait GameItem {
-    fn into_triangle(&self) -> Triangle;
-}
-
-#[derive(Clone)]
-pub struct Triangle {
-    pub coords: [f32; 9],
-    pub color: [f32; 4],
-}
-
 struct ShitItem {
-    triangle: Triangle,
+    id: String,
+    triangles: Vec<Triangle>,
     moving: [f32; 9],
 }
 
-impl GameItem for ShitItem {
-    fn into_triangle(&self) -> Triangle {
-        self.triangle.clone()
+impl Entity for ShitItem {
+    fn id(&self) -> &String {
+        &self.id
+    }
+    fn triangles(&self) -> &Vec<crate::types::Triangle> {
+        &self.triangles
+    }
+    fn update(&mut self, time_passed: f32) {
+        self.update();
     }
 }
 
 impl ShitItem {
     fn update(&mut self) {
-        let tri = &mut self.triangle.coords;
+        let tri = &mut self.triangles[0].coords;
         for n in 0..9 {
             let bounds = match n % 3 {
                 0 => (23.0, 46.0),
@@ -58,14 +59,17 @@ impl Game {
     pub fn new() -> Game {
         Game {
             render_buffer: vec![],
-            game_items: random_shit_items(100),
+            entities: random_shit_items(1000)
+                .into_iter()
+                .map(|si| Box::new(si) as Box<dyn Entity>)
+                .collect(),
             level: Level::load_from_svg_str(include_str!("../assets/map.svg")),
             frames_drawn: 0,
             last_fps_print: 0.0,
         }
     }
 
-    pub fn next_frame(&mut self) -> Vec<Triangle> {
+    pub fn next_frame(&mut self) -> &Vec<Triangle> {
         self.render_buffer.clear();
         let level_triangles = self.level.triangles();
         for tri in level_triangles {
@@ -73,14 +77,16 @@ impl Game {
         }
 
         // data
-        for item in &mut self.game_items {
-            item.update();
-            self.render_buffer.push(item.into_triangle());
+        for item in &mut self.entities {
+            item.update(0.0);
+            for tri in item.triangles() {
+                self.render_buffer.push(tri.clone());
+            }
         }
 
         self.handle_fps();
 
-        self.render_buffer.clone()
+        &self.render_buffer
     }
 
     fn handle_fps(&mut self) {
@@ -108,10 +114,11 @@ fn random_shit_items(n: usize) -> Vec<ShitItem> {
                 t[i * 3 + 1] = (random() * 1.0 + 17.5) as f32;
             }
             ShitItem {
-                triangle: Triangle {
+                id: format!("shit_item-{}", n),
+                triangles: vec![Triangle {
                     coords: t,
                     color: [0.9; 4],
-                },
+                }],
                 moving: [0.01; 9],
             }
         })

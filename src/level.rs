@@ -1,6 +1,5 @@
-use crate::game::Triangle;
 use crate::log;
-use crate::types::Color;
+use crate::types::{Color, Triangle};
 use regex::Regex;
 use svg;
 use svg::node::element::path::{Command, Data, Position};

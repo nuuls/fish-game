@@ -1,8 +1,10 @@
 use wasm_bindgen::JsValue;
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation};
 
-use crate::game::Triangle;
-use crate::utils::{float_32_array, uint_16_array};
+use crate::{
+    types::Triangle,
+    utils::{float_32_array, uint_16_array},
+};
 
 type Mat4 = [f32; 16];
 
