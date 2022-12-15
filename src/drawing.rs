@@ -93,19 +93,13 @@ impl Renderer {
         gl.enable_vertex_attrib_array(self.shader.coordinate_index);
 
         // use shader
-        if triangle.color[0] < 0.0001 {
+        if triangle.color[0] < 0.0001 && triangle.color[1] < triangle.color[2] {
             // spaghetti is served 🍝
             let water_y_level = triangle.coords[1]
                 .min(triangle.coords[4])
                 .min(triangle.coords[7]);
 
             // let water_y_level = mat4::(self.camera,
-
-            log!(
-                "water_y_level: {} triangle.coords[0]: {}",
-                water_y_level,
-                triangle.coords[0]
-            );
 
             self.use_water_shader(&triangle.color, water_y_level)?;
         } else {

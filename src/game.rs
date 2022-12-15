@@ -59,7 +59,7 @@ impl Game {
     pub fn new() -> Game {
         Game {
             render_buffer: vec![],
-            entities: random_shit_items(1000)
+            entities: random_shit_items(10)
                 .into_iter()
                 .map(|si| Box::new(si) as Box<dyn Entity>)
                 .collect(),
