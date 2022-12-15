@@ -2,6 +2,7 @@ use wasm_bindgen::JsValue;
 use web_sys::{WebGlBuffer, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation};
 
 use crate::{
+    types::Color,
     types::Triangle,
     utils::{float_32_array, uint_16_array},
 };
@@ -16,15 +17,49 @@ pub struct Shader {
     pub color_index: WebGlUniformLocation,
 }
 
+pub struct WaterShader {
+    pub base: Shader,
+    pub time_index: WebGlUniformLocation,
+    pub water_y_level_index: WebGlUniformLocation,
+}
+
 pub struct Renderer {
     pub coordinate_buffer: WebGlBuffer,
     pub index_buffer: WebGlBuffer,
-    pub shader: Shader,
     pub gl: WebGlRenderingContext,
     pub camera: Mat4,
+    pub time: f32,
+
+    pub shader: Shader,
+    pub water_shader: WaterShader,
 }
 
 impl Renderer {
+    pub fn use_shader(&self, color: &Color) -> Result<(), JsValue> {
+        let shader = &self.shader;
+
+        self.gl.use_program(Some(&shader.program));
+        self.gl
+            .uniform_matrix4fv_with_f32_array(Some(&shader.camera_index), false, &self.camera);
+        self.gl
+            .uniform4fv_with_f32_array(Some(&shader.color_index), color);
+        Ok(())
+    }
+
+    pub fn use_water_shader(&self, color: &Color, water_y_level: f32) -> Result<(), JsValue> {
+        let shader = &self.water_shader.base;
+
+        self.gl.use_program(Some(&shader.program));
+        self.gl
+            .uniform_matrix4fv_with_f32_array(Some(&shader.camera_index), false, &self.camera);
+        self.gl
+            .uniform4fv_with_f32_array(Some(&shader.color_index), color);
+
+        self.gl
+            .uniform1f(Some(&self.water_shader.water_y_level_index), water_y_level);
+        Ok(())
+    }
+
     pub fn triangle(&self, triangle: &Triangle) -> Result<(), JsValue> {
         const NUM_COORDINATES: i32 = 3;
         use WebGlRenderingContext as GL;
@@ -53,14 +88,18 @@ impl Renderer {
         gl.vertex_attrib_pointer_with_i32(self.shader.coordinate_index, 3, GL::FLOAT, false, 0, 0);
         gl.enable_vertex_attrib_array(self.shader.coordinate_index);
 
-        // bind camera matrix
+        // use shader
+        if triangle.color[0] < 0.0001 {
+            // spaghetti is served 🍝
+            let water_y_level = triangle.coords[1]
+                .min(triangle.coords[4])
+                .min(triangle.coords[7])
+                + 0.1;
 
-        // Tell WebGL to use our program when drawing
-        gl.use_program(Some(&self.shader.program));
-
-        gl.uniform_matrix4fv_with_f32_array(Some(&self.shader.camera_index), false, &self.camera);
-
-        gl.uniform4fv_with_f32_array(Some(&self.shader.color_index), &triangle.color);
+            self.use_water_shader(&triangle.color, water_y_level)?;
+        } else {
+            self.use_shader(&triangle.color)?;
+        }
 
         // draw
         gl.draw_elements_with_i32(GL::TRIANGLES, NUM_COORDINATES, GL::UNSIGNED_SHORT, 0);

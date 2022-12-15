@@ -6,6 +6,7 @@ extern crate mat4;
 extern crate wasm_bindgen;
 extern crate web_sys;
 use drawing::Shader;
+use drawing::WaterShader;
 use std::cell::RefCell;
 use std::rc::Rc;
 use types::Entity;
@@ -29,6 +30,15 @@ const AMORTIZATION: f32 = 0.95;
 #[derive(Debug, Clone)]
 struct Buffers(WebGlBuffer, WebGlBuffer, WebGlBuffer);
 
+fn into_shader(gl: &WebGlRenderingContext, program: WebGlProgram) -> Shader {
+    Shader {
+        camera_index: gl.get_uniform_location(&program, "camera").unwrap(),
+        color_index: gl.get_uniform_location(&program, "color").unwrap(),
+        coordinate_index: gl.get_attrib_location(&program, "coordinates") as u32,
+        program: program,
+    }
+}
+
 #[allow(non_snake_case)]
 #[wasm_bindgen(start)]
 pub fn start() -> Result<(), JsValue> {
@@ -43,11 +53,17 @@ pub fn start() -> Result<(), JsValue> {
         .unwrap()
         .dyn_into::<WebGlRenderingContext>()?;
 
-    // Vertex shader program
-
-    let vsSource = include_str!("../assets/shaders/default.vert");
-    let fsSource = include_str!("../assets/shaders/default.frag");
-    let shaderProgram = initShaderProgram(&gl, vsSource, fsSource)?;
+    // Shader
+    let program = initShaderProgram(
+        &gl,
+        include_str!("../assets/shaders/default.vert"),
+        include_str!("../assets/shaders/default.frag"),
+    )?;
+    let water_program = initShaderProgram(
+        &gl,
+        include_str!("../assets/shaders/water.vert"),
+        include_str!("../assets/shaders/water.frag"),
+    )?;
 
     // Draw the scene repeatedly
     let f = Rc::new(RefCell::new(None));
@@ -60,14 +76,17 @@ pub fn start() -> Result<(), JsValue> {
     let mut renderer = drawing::Renderer {
         coordinate_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
         index_buffer: gl.create_buffer().ok_or("failed to create buffer")?,
-        shader: Shader {
-            camera_index: gl.get_uniform_location(&shaderProgram, "camera").unwrap(),
-            color_index: gl.get_uniform_location(&shaderProgram, "color").unwrap(),
-            coordinate_index: gl.get_attrib_location(&shaderProgram, "coordinates") as u32,
-            program: shaderProgram,
+        shader: into_shader(&gl, program),
+        water_shader: WaterShader {
+            time_index: gl.get_uniform_location(&water_program, "time").unwrap(),
+            water_y_level_index: gl
+                .get_uniform_location(&water_program, "water_y_level")
+                .unwrap(),
+            base: into_shader(&gl, water_program),
         },
         gl,
         camera: mat4::new_identity(),
+        time: 0.0,
     };
 
     // get canvas as event target
