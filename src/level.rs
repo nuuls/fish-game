@@ -1,4 +1,4 @@
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::BorrowMut;
 use std::cell::RefCell;
 
 use crate::types::{Color, Entity, ShaderId, Triangle};

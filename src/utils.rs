@@ -1,3 +1,5 @@
+use std::sync::atomic::AtomicU64;
+
 use js_sys::WebAssembly;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::{prelude::Closure, JsValue};
@@ -123,4 +125,13 @@ pub fn bind_buffer_to_attribute(
     );
     gl.enable_vertex_attrib_array(attribute_index);
     gl.bind_buffer(WebGlRenderingContext::ARRAY_BUFFER, None);
+}
+
+static CURRENT_ID: AtomicU64 = AtomicU64::new(0);
+
+pub fn next_id() -> String {
+    format!(
+        "id-{}",
+        CURRENT_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    )
 }

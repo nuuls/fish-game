@@ -1,8 +1,11 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use nphysics2d::{
+    algebra::Force2,
+    object::{DefaultBodyHandle, DefaultColliderHandle},
+};
 
 use crate::{
-    game::random_shit_items,
-    types::{Entity, GameState, ShaderId, Triangle},
+    sick_physics::Physics,
+    types::{red, Entity, GameState, ShaderId, Triangle},
 };
 
 pub struct Player {
@@ -10,7 +13,8 @@ pub struct Player {
     position: (f32, f32),
     triangles: Vec<Triangle>,
 
-    movement: f32,
+    body_handle: Option<DefaultBodyHandle>,
+    collider_handle: Option<DefaultColliderHandle>,
 }
 
 impl Entity for Player {
@@ -22,22 +26,63 @@ impl Entity for Player {
         &self.triangles
     }
 
-    fn update(&mut self, time_passed: f32, game_state: &mut GameState) {
-        self.position.0 += time_passed * self.movement * 3.0;
+    fn update(&mut self, _time_passed: f32, gs: &mut GameState) {
+        let movement: f32 = if gs.input.move_left { -1.0 } else { 0.0 }
+            + if gs.input.move_right { 1.0 } else { 0.0 };
+
+        // apply force
+        if let Some(body) = self.body_handle.and_then(|h| gs.physics.bodies.get_mut(h)) {
+            body.apply_force(
+                0,
+                &Force2::from_slice(&[movement * 10.0, 0.0, 0.0]),
+                nphysics2d::math::ForceType::Force,
+                true,
+            );
+        }
+
+        // update position
+        if let Some(collider) = self
+            .collider_handle
+            .and_then(|h| gs.physics.colliders.get_mut(h))
+        {
+            self.triangles.clear();
+
+            let translation = collider.position().translation;
+            let (x, y) = (translation.x, translation.y);
+
+            let half_width = 0.5;
+            let half_height = 1.0;
+
+            self.triangles.push(Triangle::from_points(
+                (x - half_width, y - half_height),
+                (x + half_width, y - half_height),
+                (x + half_width, y + half_height),
+                red(),
+            ));
+            self.triangles.push(Triangle::from_points(
+                (x - half_width, y - half_height),
+                (x + half_width, y + half_height),
+                (x - half_width, y + half_height),
+                red(),
+            ));
+        }
     }
 
     fn position(&self) -> (f32, f32) {
-        self.position
+        (0.0, 0.0)
     }
 
-    fn on_user_input(&mut self, input: &crate::user_input::UserInput) {
-        if input.move_left {
-            self.movement = -1.0;
-        } else if input.move_right {
-            self.movement = 1.0;
-        } else {
-            self.movement = 0.0;
-        }
+    fn init_physics(
+        &mut self,
+        physics: &mut Physics,
+    ) -> Option<(DefaultBodyHandle, DefaultColliderHandle)> {
+        let (body_handle, collider_handle) =
+            physics.insert_cuboid(self.position.0 + 0.5, self.position.1 + 1.0, 1.0, 2.0);
+
+        self.body_handle = Some(body_handle);
+        self.collider_handle = Some(collider_handle);
+
+        Some((body_handle, collider_handle))
     }
 }
 
@@ -55,7 +100,8 @@ impl Player {
                 color: [1.0, 0.0, 0.0, 1.0],
                 shader_id: ShaderId::Default,
             }],
-            movement: 0.0,
+            body_handle: None,
+            collider_handle: None,
         }
     }
 }

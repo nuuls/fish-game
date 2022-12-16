@@ -66,10 +66,10 @@
    <rect
    id="player"
    x="16"
-   y="14"
+   y="12.674175"
    width="1"
    height="2"
-   style="fill:#917c6f;stroke:#f00;stroke-width:0.1;stroke-miterlimit:1.5;stroke-dasharray:none;fill-opacity:0" />
+   style="fill:#917c6f;fill-opacity:0;stroke:#ff0000;stroke-width:0.1;stroke-miterlimit:1.5;stroke-dasharray:none" />
    <path
    id="path845"
    d="M 10.335,16 11.417,15.65 12,15.354 12.352,14.69 12.328,11.368 h 1.181 l -0.025,1.993 0.074,1.304 L 14,15.527 15,16 Z"

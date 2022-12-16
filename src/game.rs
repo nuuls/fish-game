@@ -1,9 +1,4 @@
-use std::{
-    borrow::BorrowMut,
-    cell::{Ref, RefCell},
-    collections::HashMap,
-    rc::Rc,
-};
+use std::{cell::RefCell, rc::Rc};
 
 use js_sys::Math::random;
 
@@ -13,14 +8,15 @@ use crate::{
     log,
     player::Player,
     sick_physics::Physics,
-    types::{Entity, GameState, ShaderId, Triangle},
+    types::{Entities, Entity, GameState, ShaderId, Triangle},
     user_input::{self, InputHandler},
 };
 
 pub struct Game {
     render_buffer: Vec<Triangle>,
-    entities: HashMap<String, Rc<RefCell<dyn Entity>>>,
+    entities: Entities,
     input_handler: InputHandler,
+    physics: Rc<RefCell<Physics>>,
 
     last_fps_print: f64,
     frames_drawn: usize,
@@ -68,13 +64,13 @@ impl ShitItem {
 
 impl Game {
     pub fn new() -> Game {
-        let mut entities: HashMap<String, Rc<RefCell<dyn Entity>>> = HashMap::new();
+        let mut entities = Entities::new();
 
         let level = Level::load_from_svg_str(include_str!("../assets/map.svg"));
         let ground = level.ground();
         let player = Player::new(level.player_pos());
-        entities.insert(level.id().clone(), Rc::new(RefCell::new(level)));
-        entities.insert(player.id().clone(), Rc::new(RefCell::new(player)));
+        entities.insert(level);
+        entities.insert(player);
 
         let mut physics = Physics::new();
 
@@ -84,17 +80,17 @@ impl Game {
             ground.2 / 2.0,
             ground.3 / 2.0,
         );
-        // physics.insert_cube(16.1, 0.0, 2.0);
-        entities.insert(physics.id().clone(), Rc::new(RefCell::new(physics)));
+        let physics = Rc::new(RefCell::new(physics));
 
         let fish = Fish::new(FishRace::Goldfish);
-        entities.insert(fish.id().clone(), Rc::new(RefCell::new(fish)));
+        entities.insert(fish);
 
         let mut input_handler = user_input::InputHandler::new();
         input_handler.attach();
 
         Game {
             render_buffer: vec![],
+            physics,
             entities,
             input_handler,
             frames_drawn: 0,
@@ -104,27 +100,32 @@ impl Game {
 
     pub fn tick(&mut self, time_passed: f32) {
         self.render_buffer.clear();
-        // data
-        let input = self.input_handler.current_state();
-        let mut game_state = GameState {
-            input: &input,
-            entities: &self.entities,
-            entity_ops: vec![],
-        };
-        for (id, item) in &self.entities {
-            item.as_ref().borrow_mut().on_user_input(&input);
-            item.as_ref()
-                .borrow_mut()
-                .update(time_passed, &mut game_state);
+
+        {
+            let input = self.input_handler.current_state();
+            let mut physics = self.physics.as_ref().borrow_mut();
+
+            // TODO: set timestep
+            physics.step();
+
+            let mut game_state = GameState {
+                physics: &mut physics,
+                input: &input,
+                entities: &self.entities,
+            };
+
+            for entity in self.entities.iter() {
+                entity.update(time_passed, &mut game_state);
+            }
+
+            self.entities.handle_ops(&mut *physics);
         }
-        for op in game_state.entity_ops {
-            op(&mut self.entities);
-        }
+
         self.handle_fps();
     }
 
-    pub fn entities(&self) -> impl Iterator<Item = Ref<dyn Entity>> {
-        self.entities.values().map(|item| item.borrow())
+    pub fn entities(&self) -> &Entities {
+        &self.entities
     }
 
     fn handle_fps(&mut self) {
@@ -143,6 +144,7 @@ impl Game {
     }
 }
 
+#[allow(dead_code)]
 pub fn random_shit_items(n: usize) -> Vec<ShitItem> {
     (0..n)
         .map(|_| {

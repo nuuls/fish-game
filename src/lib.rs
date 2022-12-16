@@ -174,7 +174,7 @@ fn draw_scene(
     renderer.camera = tmp2;
 
     game.tick(time_passed);
-    for en in game.entities() {
+    for en in game.entities().iter() {
         for tri in en.triangles() {
             renderer.triangle(&tri, en.position())?;
         }

@@ -1,6 +1,6 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
-
-use crate::user_input::UserInput;
+use crate::{sick_physics::Physics, user_input::UserInput};
+use nphysics2d::object::{DefaultBodyHandle, DefaultColliderHandle};
+use std::{cell::RefCell, collections::HashMap, mem, rc::Rc};
 
 pub type Color = [f32; 4];
 
@@ -37,17 +37,96 @@ pub fn cyan() -> Color {
 pub trait Entity {
     fn id(&self) -> &String;
     fn triangles(&self) -> &Vec<Triangle>;
-    fn update(&mut self, _time_passed: f32, game_state: &mut GameState) {}
+    fn update(&mut self, _time_passed: f32, _game_state: &mut GameState) {}
     fn position(&self) -> (f32, f32) {
         return (0.0, 0.0);
     }
-    fn on_user_input(&mut self, _input: &UserInput) {}
+    fn init_physics(
+        &mut self,
+        _physics: &mut Physics,
+    ) -> Option<(DefaultBodyHandle, DefaultColliderHandle)> {
+        None
+    }
+}
+
+pub struct EntityEntry {
+    pub entity: Rc<RefCell<dyn Entity>>,
+    pub physics_initialized: bool,
+    pub physics_body: Option<DefaultBodyHandle>,
+    pub physics_collision: Option<DefaultColliderHandle>,
+}
+
+enum EntityOp {
+    Insert(Rc<RefCell<dyn Entity>>),
+    Remove(String),
+}
+
+#[derive(Default)]
+pub struct Entities {
+    map: HashMap<String, EntityEntry>,
+    queued_ops: Vec<EntityOp>,
+}
+
+impl Entities {
+    pub fn insert(&mut self, entity: impl Entity + 'static) {
+        self.queued_ops
+            .push(EntityOp::Insert(Rc::new(RefCell::new(entity))));
+    }
+
+    pub fn remove(&mut self, id: &String) {
+        self.queued_ops.push(EntityOp::Remove(id.clone()));
+    }
+
+    pub fn handle_ops(&mut self, physics: &mut Physics) {
+        for op in self.queued_ops.drain(..) {
+            match op {
+                EntityOp::Insert(entity) => {
+                    let res = entity.borrow_mut().init_physics(physics);
+
+                    let id = entity.borrow().id().clone();
+
+                    let old = self.map.insert(
+                        id.clone(),
+                        EntityEntry {
+                            entity,
+                            physics_initialized: false,
+                            physics_body: res.map(|x| x.0),
+                            physics_collision: res.map(|x| x.1),
+                        },
+                    );
+                    if let Some(_) = &old {
+                        panic!("Entity with id {} already exists", id);
+                    }
+                }
+                // TODO: remove all physics bodies and collisions
+                EntityOp::Remove(_id) => unimplemented!(),
+            }
+        }
+    }
+
+    // TODO: on drop remove all physics bodies and collisions
+
+    pub fn iter(&self) -> impl Iterator<Item = &mut dyn Entity> {
+        self.map
+            .values()
+            .map(|entry| unsafe { mem::transmute(entry.entity.as_ptr()) })
+    }
+
+    pub fn entries(&mut self) -> impl Iterator<Item = &mut EntityEntry> {
+        self.map.values_mut()
+    }
+}
+
+impl Entities {
+    pub fn new() -> Self {
+        Default::default()
+    }
 }
 
 pub struct GameState<'a> {
     pub input: &'a UserInput,
-    pub entities: &'a HashMap<String, Rc<RefCell<dyn Entity>>>,
-    pub entity_ops: Vec<Box<dyn FnOnce(&mut HashMap<String, Rc<RefCell<dyn Entity>>>)>>,
+    pub physics: &'a mut Physics,
+    pub entities: &'a Entities,
 }
 
 #[derive(Clone, Default)]

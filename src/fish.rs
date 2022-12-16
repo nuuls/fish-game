@@ -1,6 +1,9 @@
 use js_sys::Math::random;
 
-use crate::types::{Entity, GameState, ShaderId, Triangle};
+use crate::{
+    types::{Entity, GameState, Triangle},
+    utils::next_id,
+};
 
 pub struct Fish {
     id: String,
@@ -18,7 +21,7 @@ pub enum FishRace {
 impl Fish {
     pub fn new(race: FishRace) -> Self {
         Fish {
-            id: "XD".to_string(),
+            id: next_id(),
             race,
             position: ((random() * 20.0) as f32, (random() * 20.0) as f32),
             triangles: vec![Triangle {
