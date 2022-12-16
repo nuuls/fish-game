@@ -16,6 +16,7 @@ mod drawing;
 mod game;
 mod level;
 mod player;
+mod sick_physics;
 mod types;
 mod user_input;
 use game::Game;

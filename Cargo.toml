@@ -2,7 +2,7 @@
 name = "rust-wasm-webgl"
 version = "0.1.0"
 authors = ["Aleksandr Lykhouzov <lykhouzov@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
@@ -33,6 +33,10 @@ earcutr = "0.3.0"
 regex = "1.7.0"
 hex = "0.4.3"
 
+[dependencies.nphysics2d]
+version = "0.24.0"
+features = ["use-wasm-bindgen"]
+
 
 [dependencies.web-sys]
 version = "0.3"
@@ -57,7 +61,7 @@ features = [
   'Event',
   'MouseEventInit',
   'Performance',
-  'PerformanceTiming'
+  'PerformanceTiming',
 ]
 
 [dev-dependencies]
@@ -66,4 +70,3 @@ wasm-bindgen-test = "0.2"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
-
