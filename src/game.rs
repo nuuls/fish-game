@@ -4,7 +4,7 @@ use crate::{
     level::Level,
     log,
     player::Player,
-    types::{Entity, Triangle},
+    types::{Entity, ShaderId, Triangle},
     user_input::{self, InputHandler},
 };
 
@@ -128,6 +128,7 @@ fn random_shit_items(n: usize) -> Vec<ShitItem> {
                 triangles: vec![Triangle {
                     coords: t,
                     color: [0.9; 4],
+                    shader_id: ShaderId::Default,
                 }],
                 moving,
             }

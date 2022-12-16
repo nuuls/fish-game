@@ -1,8 +1,7 @@
 use std::borrow::{Borrow, BorrowMut};
-use std::cell::{RefCell};
+use std::cell::RefCell;
 
-
-use crate::types::{Color, Entity, Triangle};
+use crate::types::{Color, Entity, ShaderId, Triangle};
 use regex::Regex;
 use svg;
 use svg::node::element::path::{Command, Data, Position};
@@ -193,7 +192,7 @@ impl Level {
             let path_triangles = earcutr::earcut(polygon.0.as_slice(), &vec![], 2);
 
             for [a, b, c] in path_triangles.array_chunks::<3>() {
-                triangles.push(Triangle {
+                let mut triangle = Triangle {
                     coords: [
                         polygon.0[*a * 2] as f32,
                         polygon.0[*a * 2 + 1] as f32,
@@ -206,7 +205,14 @@ impl Level {
                         0.0 as f32,
                     ],
                     color: polygon.1,
-                });
+                    shader_id: ShaderId::Default,
+                };
+
+                if triangle.color[0] < 0.0001 && triangle.color[1] < triangle.color[2] {
+                    triangle.shader_id = ShaderId::Water;
+                }
+
+                triangles.push(triangle);
             }
         }
 

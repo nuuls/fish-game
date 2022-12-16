@@ -1,11 +1,11 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use wasm_bindgen::prelude::*;
+
 use wasm_bindgen::JsCast;
 
 use wasm_bindgen::prelude::Closure;
 
-use crate::log;
+
 
 #[derive(Default, Clone)]
 pub struct UserInput {

@@ -108,8 +108,6 @@ impl Renderer {
                 .min(triangle.coords[4])
                 .min(triangle.coords[7]);
 
-            // let water_y_level = mat4::(self.camera,
-
             self.use_water_shader(&triangle.color, water_y_level)?;
         } else {
             self.use_shader(&triangle, position_offset)?;

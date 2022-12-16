@@ -9,11 +9,19 @@ pub trait Entity {
     fn position(&self) -> (f32, f32) {
         return (0.0, 0.0);
     }
-    fn on_user_input(&mut self, input: &UserInput) {}
+    fn on_user_input(&mut self, _input: &UserInput) {}
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Triangle {
     pub coords: [f32; 9],
     pub color: [f32; 4],
+    pub shader_id: ShaderId,
+}
+
+#[derive(Clone, Default)]
+pub enum ShaderId {
+    #[default]
+    Default,
+    Water,
 }

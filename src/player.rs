@@ -1,8 +1,7 @@
-use js_sys::Math::random;
+
 
 use crate::{
-    log,
-    types::{Entity, Triangle},
+    types::{Entity, ShaderId, Triangle},
 };
 
 pub struct Player {
@@ -53,6 +52,7 @@ impl Player {
                     0.0, 2.0, 1.0, //
                 ],
                 color: [1.0, 0.0, 0.0, 1.0],
+                shader_id: ShaderId::Default,
             }],
             movement: 0.0,
         }
