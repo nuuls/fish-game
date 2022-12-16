@@ -59,7 +59,7 @@ impl ShitItem {
 
 impl Game {
     pub fn new() -> Game {
-        let mut entities: Vec<Box<dyn Entity>> = random_shit_items(1000)
+        let mut entities: Vec<Box<dyn Entity>> = random_shit_items(3)
             .into_iter()
             .map(|si| Box::new(si) as Box<dyn Entity>)
             .collect();
