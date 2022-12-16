@@ -1,6 +1,7 @@
 use js_sys::Math::random;
 
 use crate::{
+    fish::{Fish, FishRace},
     level::Level,
     log,
     player::Player,
@@ -81,6 +82,8 @@ impl Game {
         );
         // physics.insert_cube(16.1, 0.0, 2.0);
         entities.push(Box::new(physics));
+
+        entities.push(Box::new(Fish::new(FishRace::Goldfish)));
 
         let mut input_handler = user_input::InputHandler::new();
         input_handler.attach();
