@@ -1,8 +1,4 @@
-
-
-use crate::{
-    types::{Entity, ShaderId, Triangle},
-};
+use crate::types::{Entity, ShaderId, Triangle};
 
 pub struct Player {
     id: String,

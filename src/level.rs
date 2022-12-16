@@ -11,7 +11,8 @@ use svg::parser::Event;
 pub struct Level {
     id: String,
     triangles: Vec<Triangle>,
-    _player_pos: (f32, f32),
+    player_pos: (f32, f32),
+    ground: (f32, f32, f32, f32),
 }
 
 fn update_point(
@@ -42,6 +43,7 @@ impl Level {
         let polygons: RefCell<Vec<(Vec<f32>, Color)>> =
             RefCell::new(vec![(vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0])]);
         let mut player_pos = (0.0, 0.0);
+        let mut hitbox = (0.0, 0.0, 0.0, 0.0);
 
         for event in parser {
             match event {
@@ -149,13 +151,12 @@ impl Level {
                     )
                     .unwrap_or([1.0, 0.0, 1.0, 1.0]);
 
-                    match attributes.get("id") {
-                        Some(id) => {
-                            if id.to_string() == "player" {
-                                player_pos = (x, y);
-                            }
+                    if let Some(id) = attributes.get("id").map(|v| v.to_string()) {
+                        if id == "player" {
+                            player_pos = (x, y);
+                        } else if id.starts_with("hitbox") {
+                            hitbox = (x, y, width, height);
                         }
-                        None => {}
                     }
 
                     let path = vec![
@@ -219,16 +220,17 @@ impl Level {
         Level {
             id: "level".to_string(),
             triangles,
-            _player_pos: player_pos,
+            player_pos,
+            ground: hitbox,
         }
     }
 
-    pub fn triangles(&self) -> &Vec<Triangle> {
-        &self.triangles
+    pub fn player_pos(&self) -> (f32, f32) {
+        self.player_pos
     }
 
-    pub fn player_pos(&self) -> (f32, f32) {
-        self._player_pos
+    pub fn ground(&self) -> (f32, f32, f32, f32) {
+        self.ground
     }
 }
 

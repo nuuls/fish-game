@@ -66,16 +66,20 @@ impl Game {
             .collect();
 
         let level = Level::load_from_svg_str(include_str!("../assets/map.svg"));
+        let ground = level.ground();
         let player = Box::new(Player::new(level.player_pos()));
         entities.push(Box::new(level));
         entities.push(player);
 
         let mut physics = Physics::new();
-        physics.insert_ground(15.0, 30.0, 10.0, 1.0);
-        physics.insert_cube(16.1, 10.0, 2.0);
-        physics.insert_cube(16.3, 12.0, 2.0);
-        physics.insert_cube(16.5, 14.0, 2.0);
-        physics.insert_cube(16.7, 16.0, 2.0);
+
+        physics.insert_ground(
+            ground.0 + ground.2 / 2.0,
+            ground.1 + ground.3 / 2.0,
+            ground.2 / 2.0,
+            ground.3 / 2.0,
+        );
+        // physics.insert_cube(16.1, 0.0, 2.0);
         entities.push(Box::new(physics));
 
         let mut input_handler = user_input::InputHandler::new();

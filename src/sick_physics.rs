@@ -58,8 +58,8 @@ impl Physics {
         );
     }
 
-    pub fn insert_ground(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(width / 2.0, height / 2.0)));
+    pub fn insert_ground(&mut self, x: f32, y: f32, half_width: f32, half_height: f32) {
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(half_width, half_height)));
         // let body = RigidBodyDesc::new().translation(Vector2::new(x, y)).build();
         let body_handle = self.bodies.insert(Ground::new());
         let co = ColliderDesc::new(shape)
