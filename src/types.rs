@@ -52,7 +52,11 @@ pub enum ShaderId {
 
 impl Triangle {
     pub fn new(coords: [f32; 9], color: [f32; 4]) -> Triangle {
-        Triangle { coords, color }
+        Triangle {
+            coords,
+            color,
+            ..Default::default()
+        }
     }
 
     pub fn from_points(
@@ -64,6 +68,7 @@ impl Triangle {
         Triangle {
             coords: [p1.0, p1.1, 0.0, p2.0, p2.1, 0.0, p3.0, p3.1, 0.0],
             color,
+            ..Default::default()
         }
     }
 }
