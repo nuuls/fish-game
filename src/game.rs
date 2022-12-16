@@ -4,8 +4,8 @@ use crate::{
     level::Level,
     log,
     player::Player,
-    types::{Entity, ShaderId, Triangle},
     sick_physics::Physics,
+    types::{Entity, ShaderId, Triangle},
     user_input::{self, InputHandler},
 };
 
@@ -71,11 +71,11 @@ impl Game {
         entities.push(player);
 
         let mut physics = Physics::new();
-        physics.insert_ground(15.0, 15.0, 10.0, 1.0);
-        physics.insert_cube(16.1, 30.0, 2.0);
-        physics.insert_cube(16.3, 32.0, 2.0);
-        physics.insert_cube(16.5, 34.0, 2.0);
-        physics.insert_cube(16.7, 36.0, 2.0);
+        physics.insert_ground(15.0, 30.0, 10.0, 1.0);
+        physics.insert_cube(16.1, 10.0, 2.0);
+        physics.insert_cube(16.3, 12.0, 2.0);
+        physics.insert_cube(16.5, 14.0, 2.0);
+        physics.insert_cube(16.7, 16.0, 2.0);
         entities.push(Box::new(physics));
 
         let mut input_handler = user_input::InputHandler::new();

@@ -27,7 +27,7 @@ pub struct Physics {
 
 impl Physics {
     pub fn new() -> Self {
-        let mut mechanical_world = DefaultMechanicalWorld::new(Vector2::new(0.0, -9.81));
+        let mut mechanical_world = DefaultMechanicalWorld::new(Vector2::new(0.0, 9.81));
         let geometrical_world = DefaultGeometricalWorld::<F>::new();
         let bodies = DefaultBodySet::new();
         let colliders = DefaultColliderSet::new();
@@ -59,7 +59,7 @@ impl Physics {
     }
 
     pub fn insert_ground(&mut self, x: f32, y: f32, width: f32, height: f32) {
-        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(width, height)));
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(width / 2.0, height / 2.0)));
         // let body = RigidBodyDesc::new().translation(Vector2::new(x, y)).build();
         let body_handle = self.bodies.insert(Ground::new());
         let co = ColliderDesc::new(shape)
@@ -69,8 +69,8 @@ impl Physics {
     }
 
     pub fn insert_cube(&mut self, x: f32, y: f32, size: f32) {
-        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(size, size)));
-        let mut body = RigidBodyDesc::new().translation(Vector2::new(x, y)).build();
+        let shape = ShapeHandle::new(Cuboid::new(Vector2::new(size / 2.0, size / 2.0)));
+        let body = RigidBodyDesc::new().translation(Vector2::new(x, y)).build();
         let body_handle = self.bodies.insert(body);
         let co = ColliderDesc::new(shape)
             .density(1.0)

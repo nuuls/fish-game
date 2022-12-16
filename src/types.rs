@@ -2,26 +2,32 @@ use crate::user_input::UserInput;
 
 pub type Color = [f32; 4];
 
+#[allow(dead_code)]
 pub fn red() -> Color {
     [1.0, 0.0, 0.0, 1.0]
 }
 
+#[allow(dead_code)]
 pub fn green() -> Color {
     [0.0, 1.0, 0.0, 1.0]
 }
 
+#[allow(dead_code)]
 pub fn blue() -> Color {
     [0.0, 0.0, 1.0, 1.0]
 }
 
+#[allow(dead_code)]
 pub fn yellow() -> Color {
     [1.0, 1.0, 0.0, 1.0]
 }
 
+#[allow(dead_code)]
 pub fn pink() -> Color {
     [1.0, 0.0, 1.0, 1.0]
 }
 
+#[allow(dead_code)]
 pub fn cyan() -> Color {
     [0.0, 1.0, 1.0, 1.0]
 }
