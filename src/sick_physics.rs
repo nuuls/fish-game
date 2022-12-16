@@ -9,7 +9,7 @@ use nphysics2d::object::{
 };
 use nphysics2d::world::{DefaultGeometricalWorld, DefaultMechanicalWorld};
 
-use crate::types::{red, Color, Entity, Triangle};
+use crate::types::{red, Color, Entity, GameState, Triangle};
 
 type F = f32;
 
@@ -101,7 +101,7 @@ fn triangulate_cuboid(cuboid: &Cuboid<F>, position: &Isometry<f32>, triangles: &
 }
 
 impl Entity for Physics {
-    fn update(&mut self, delta_time: f32) {
+    fn update(&mut self, delta_time: f32, _game_state: &mut GameState) {
         // self.mechanical_world.set_timestep(delta_time / 1000.0);
         self.step();
 

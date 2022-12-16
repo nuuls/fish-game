@@ -173,7 +173,8 @@ fn draw_scene(
     mat4::translate(&mut tmp2, &tmp1, &[-30.0, -15.0, 0.0]);
     renderer.camera = tmp2;
 
-    for en in game.next_frame(time_passed) {
+    game.tick(time_passed);
+    for en in game.entities() {
         for tri in en.triangles() {
             renderer.triangle(&tri, en.position())?;
         }

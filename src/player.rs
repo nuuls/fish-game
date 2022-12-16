@@ -1,4 +1,9 @@
-use crate::types::{Entity, ShaderId, Triangle};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
+
+use crate::{
+    game::random_shit_items,
+    types::{Entity, GameState, ShaderId, Triangle},
+};
 
 pub struct Player {
     id: String,
@@ -17,7 +22,7 @@ impl Entity for Player {
         &self.triangles
     }
 
-    fn update(&mut self, time_passed: f32) {
+    fn update(&mut self, time_passed: f32, game_state: &mut GameState) {
         self.position.0 += time_passed * self.movement * 3.0;
     }
 

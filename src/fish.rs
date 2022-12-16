@@ -1,6 +1,6 @@
 use js_sys::Math::random;
 
-use crate::types::{Entity, ShaderId, Triangle};
+use crate::types::{Entity, GameState, ShaderId, Triangle};
 
 pub struct Fish {
     id: String,
@@ -47,7 +47,7 @@ impl Entity for Fish {
         self.position
     }
 
-    fn update(&mut self, _time_passed: f32) {
+    fn update(&mut self, _time_passed: f32, _game_state: &mut GameState) {
         self.position.0 += (random() as f32 - 0.5) * 0.1;
         self.position.1 += (random() as f32 - 0.5) * 0.1;
     }

@@ -1,3 +1,10 @@
+use std::{
+    borrow::BorrowMut,
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
+
 use js_sys::Math::random;
 
 use crate::{
@@ -6,20 +13,20 @@ use crate::{
     log,
     player::Player,
     sick_physics::Physics,
-    types::{Entity, ShaderId, Triangle},
+    types::{Entity, GameState, ShaderId, Triangle},
     user_input::{self, InputHandler},
 };
 
 pub struct Game {
     render_buffer: Vec<Triangle>,
-    entities: Vec<Box<dyn Entity>>,
+    entities: HashMap<String, Rc<RefCell<dyn Entity>>>,
     input_handler: InputHandler,
 
     last_fps_print: f64,
     frames_drawn: usize,
 }
 
-struct ShitItem {
+pub struct ShitItem {
     id: String,
     triangles: Vec<Triangle>,
     moving: [f32; 9],
@@ -32,7 +39,7 @@ impl Entity for ShitItem {
     fn triangles(&self) -> &Vec<crate::types::Triangle> {
         &self.triangles
     }
-    fn update(&mut self, _time_passed: f32) {
+    fn update(&mut self, _time_passed: f32, _game_state: &mut GameState) {
         self.update();
     }
 }
@@ -61,16 +68,13 @@ impl ShitItem {
 
 impl Game {
     pub fn new() -> Game {
-        let mut entities: Vec<Box<dyn Entity>> = random_shit_items(3)
-            .into_iter()
-            .map(|si| Box::new(si) as Box<dyn Entity>)
-            .collect();
+        let mut entities: HashMap<String, Rc<RefCell<dyn Entity>>> = HashMap::new();
 
         let level = Level::load_from_svg_str(include_str!("../assets/map.svg"));
         let ground = level.ground();
-        let player = Box::new(Player::new(level.player_pos()));
-        entities.push(Box::new(level));
-        entities.push(player);
+        let player = Player::new(level.player_pos());
+        entities.insert(level.id().clone(), Rc::new(RefCell::new(level)));
+        entities.insert(player.id().clone(), Rc::new(RefCell::new(player)));
 
         let mut physics = Physics::new();
 
@@ -81,9 +85,10 @@ impl Game {
             ground.3 / 2.0,
         );
         // physics.insert_cube(16.1, 0.0, 2.0);
-        entities.push(Box::new(physics));
+        entities.insert(physics.id().clone(), Rc::new(RefCell::new(physics)));
 
-        entities.push(Box::new(Fish::new(FishRace::Goldfish)));
+        let fish = Fish::new(FishRace::Goldfish);
+        entities.insert(fish.id().clone(), Rc::new(RefCell::new(fish)));
 
         let mut input_handler = user_input::InputHandler::new();
         input_handler.attach();
@@ -97,18 +102,29 @@ impl Game {
         }
     }
 
-    pub fn next_frame(&mut self, time_passed: f32) -> &Vec<Box<dyn Entity>> {
+    pub fn tick(&mut self, time_passed: f32) {
         self.render_buffer.clear();
         // data
         let input = self.input_handler.current_state();
-        for item in &mut self.entities {
-            item.on_user_input(&input);
-            item.update(time_passed);
+        let mut game_state = GameState {
+            input: &input,
+            entities: &self.entities,
+            entity_ops: vec![],
+        };
+        for (id, item) in &self.entities {
+            item.as_ref().borrow_mut().on_user_input(&input);
+            item.as_ref()
+                .borrow_mut()
+                .update(time_passed, &mut game_state);
         }
-
+        for op in game_state.entity_ops {
+            op(&mut self.entities);
+        }
         self.handle_fps();
+    }
 
-        &self.entities
+    pub fn entities(&self) -> impl Iterator<Item = Ref<dyn Entity>> {
+        self.entities.values().map(|item| item.borrow())
     }
 
     fn handle_fps(&mut self) {
@@ -127,7 +143,7 @@ impl Game {
     }
 }
 
-fn random_shit_items(n: usize) -> Vec<ShitItem> {
+pub fn random_shit_items(n: usize) -> Vec<ShitItem> {
     (0..n)
         .map(|_| {
             let mut t = [0.0; 9];
@@ -140,7 +156,7 @@ fn random_shit_items(n: usize) -> Vec<ShitItem> {
                 moving[i * 3 + 1] = (random() * 0.01 - 0.01) as f32;
             }
             ShitItem {
-                id: format!("shit_item-{}", n),
+                id: format!("shit_item-{}", random()),
                 triangles: vec![Triangle {
                     coords: t,
                     color: [0.9; 4],
