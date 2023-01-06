@@ -61,8 +61,13 @@ impl Entity for Player {
         &mut self,
         physics: &mut Physics,
     ) -> Option<(DefaultBodyHandle, DefaultColliderHandle)> {
-        let (body_handle, collider_handle) =
-            physics.insert_cuboid(self.position.0 + 0.5, self.position.1 + 1.0, 1.0, 2.0);
+        let (body_handle, collider_handle) = physics.insert_cuboid(
+            self.position.0 + 0.5,
+            self.position.1 + 1.0,
+            1.0,
+            2.0,
+            physics.collision_groups.player,
+        );
 
         self.body_handle = Some(body_handle);
         self.collider_handle = Some(collider_handle);

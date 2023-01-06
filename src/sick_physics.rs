@@ -1,6 +1,5 @@
 use nphysics2d::force_generator::DefaultForceGeneratorSet;
 use nphysics2d::joint::DefaultJointConstraintSet;
-use nphysics2d::math::Isometry;
 use nphysics2d::nalgebra::Vector2;
 use nphysics2d::ncollide2d::pipeline::CollisionGroups;
 use nphysics2d::ncollide2d::shape::{Cuboid, ShapeHandle};
@@ -10,20 +9,29 @@ use nphysics2d::object::{
 };
 use nphysics2d::world::{DefaultGeometricalWorld, DefaultMechanicalWorld};
 
-use crate::types::{red, Entity, GameState, Triangle};
+use crate::types::Triangle;
 
 type F = f32;
 
-pub struct Collisions {
+// collision groups
+const GROUND_GROUP_ID: usize = 0;
+const PLAYER_GROUP_ID: usize = 1;
+const FISHING_ROD_GROUP_ID: usize = 2;
+
+pub struct CollisionGroupData {
+    pub ground: CollisionGroups,
     pub player: CollisionGroups,
     pub fishing_rod: CollisionGroups,
 }
 
-impl Collisions {
+impl CollisionGroupData {
     pub fn new() -> Self {
         Self {
-            player: CollisionGroups::new(),
-            fishing_rod: CollisionGroups::new(),
+            ground: CollisionGroups::new().with_membership(&[GROUND_GROUP_ID]),
+            player: CollisionGroups::new().with_membership(&[PLAYER_GROUP_ID]),
+            fishing_rod: CollisionGroups::new()
+                .with_membership(&[FISHING_ROD_GROUP_ID])
+                .with_whitelist(&[GROUND_GROUP_ID]),
         }
     }
 }
@@ -39,7 +47,7 @@ pub struct Physics {
     pub joint_constraints: DefaultJointConstraintSet<F>,
     pub force_generators: DefaultForceGeneratorSet<F>,
 
-    pub collisions: Collisions,
+    pub collision_groups: CollisionGroupData,
 }
 
 impl Physics {
@@ -63,7 +71,7 @@ impl Physics {
             joint_constraints,
             force_generators,
 
-            collisions: Collisions::new(),
+            collision_groups: CollisionGroupData::new(),
         }
     }
 
@@ -83,6 +91,7 @@ impl Physics {
         let body_handle = self.bodies.insert(Ground::new());
         let co = ColliderDesc::new(shape)
             .translation(Vector2::new(x, y))
+            .collision_groups(self.collision_groups.ground)
             .build(BodyPartHandle(body_handle, 0));
         self.colliders.insert(co);
     }
@@ -93,6 +102,7 @@ impl Physics {
         center_y: f32,
         width: f32,
         height: f32,
+        collision_groups: CollisionGroups,
     ) -> (DefaultBodyHandle, DefaultColliderHandle) {
         let shape = ShapeHandle::new(Cuboid::new(Vector2::new(width / 2.0, height / 2.0)));
         let body = RigidBodyDesc::new()
@@ -100,6 +110,7 @@ impl Physics {
             .build();
         let body_handle = self.bodies.insert(body);
         let co = ColliderDesc::new(shape)
+            .collision_groups(collision_groups)
             .density(1.0)
             .build(BodyPartHandle(body_handle, 0));
         let collider_handle = self.colliders.insert(co);

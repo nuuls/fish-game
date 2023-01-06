@@ -30,6 +30,10 @@ impl InputHandler {
         {
             let state = self.current_state.clone();
             let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+                if event.repeat() {
+                    return;
+                }
+
                 let mut s = state.borrow_mut();
 
                 s.move_left = event.key() == "a";

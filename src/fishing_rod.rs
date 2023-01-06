@@ -5,7 +5,7 @@ use nphysics2d::{
 
 use crate::{
     sick_physics::Physics,
-    types::{cyan, Entity, GameState, ShaderId, Triangle},
+    types::{cyan, green, red, Entity, GameState, ShaderId, Triangle},
     utils::next_id,
 };
 
@@ -17,6 +17,7 @@ pub struct FishingRod {
     position: (f32, f32),
     rotation: f32,
     triangles: Vec<Triangle>,
+    once: bool,
 
     body_handle: Option<DefaultBodyHandle>,
     collider_handle: Option<DefaultColliderHandle>,
@@ -33,13 +34,16 @@ impl Entity for FishingRod {
 
     fn update(&mut self, _time_passed: f32, gs: &mut GameState) {
         // apply force
-        if let Some(body) = self.body_handle.and_then(|h| gs.physics.bodies.get_mut(h)) {
-            body.apply_force(
-                0,
-                &Force2::from_slice(&[10.0, 0.0, 0.0]),
-                nphysics2d::math::ForceType::Impulse,
-                true,
-            );
+        if self.once {
+            self.once = false;
+            if let Some(body) = self.body_handle.and_then(|h| gs.physics.bodies.get_mut(h)) {
+                body.apply_force(
+                    0,
+                    &Force2::from_slice(&[0.1, 0.0, 0.0]),
+                    nphysics2d::math::ForceType::Impulse,
+                    true,
+                );
+            }
         }
 
         // update position
@@ -65,8 +69,13 @@ impl Entity for FishingRod {
         &mut self,
         physics: &mut Physics,
     ) -> Option<(DefaultBodyHandle, DefaultColliderHandle)> {
-        let (body_handle, collider_handle) =
-            physics.insert_cuboid(self.position.0, self.position.1, HALF_WIDTH, HALF_HEIGHT);
+        let (body_handle, collider_handle) = physics.insert_cuboid(
+            self.position.0,
+            self.position.1,
+            HALF_WIDTH,
+            HALF_HEIGHT,
+            physics.collision_groups.fishing_rod,
+        );
 
         self.body_handle = Some(body_handle);
         self.collider_handle = Some(collider_handle);
@@ -81,18 +90,19 @@ impl FishingRod {
             id: next_id() + &"fishing_hook",
             position,
             rotation: 0.0,
+            once: true,
             triangles: vec![
                 Triangle::from_points(
                     (-HALF_WIDTH, -HALF_HEIGHT),
                     (HALF_WIDTH, -HALF_HEIGHT),
                     (HALF_WIDTH, HALF_HEIGHT),
-                    cyan(),
+                    red(),
                 ),
                 Triangle::from_points(
                     (-HALF_WIDTH, -HALF_HEIGHT),
                     (HALF_WIDTH, HALF_HEIGHT),
                     (-HALF_WIDTH, HALF_HEIGHT),
-                    cyan(),
+                    red(),
                 ),
             ],
             body_handle: None,
