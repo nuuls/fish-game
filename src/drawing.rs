@@ -63,6 +63,11 @@ impl Renderer {
         self.gl.use_program(Some(&shader.program));
         self.gl
             .uniform_matrix4fv_with_f32_array(Some(&shader.camera_index), false, &self.camera);
+        self.gl.uniform_matrix4fv_with_f32_array(
+            Some(&shader.transform_index),
+            false,
+            &mat4::new_identity(),
+        );
         self.gl
             .uniform4fv_with_f32_array(Some(&shader.color_index), color);
 
