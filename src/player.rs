@@ -33,12 +33,7 @@ impl Entity for Player {
 
         // apply force
         if let Some(body) = self.body_handle.and_then(|h| gs.physics.bodies.get_mut(h)) {
-            body.apply_force(
-                0,
-                &Force2::from_slice(&[movement * 10.0, 0.0, 0.0]),
-                nphysics2d::math::ForceType::Force,
-                true,
-            );
+            body.apply_displacement(&[movement * 0.02, 0.0, 0.0]);
         }
 
         // update position
