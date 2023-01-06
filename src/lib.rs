@@ -14,6 +14,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{EventTarget, WebGlBuffer, WebGlProgram, WebGlRenderingContext};
 mod drawing;
 mod fish;
+mod fishing_rod;
 mod game;
 mod level;
 mod player;

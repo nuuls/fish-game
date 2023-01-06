@@ -8,13 +8,14 @@ use crate::{
     log,
     player::Player,
     sick_physics::Physics,
-    types::{Entities, Entity, GameState, ShaderId, Triangle},
+    types::{Entities, Entity, EntityOps, GameState, ShaderId, Triangle},
     user_input::{self, InputHandler},
 };
 
 pub struct Game {
     render_buffer: Vec<Triangle>,
     entities: Entities,
+    entity_ops: EntityOps,
     input_handler: InputHandler,
     physics: Rc<RefCell<Physics>>,
 
@@ -64,13 +65,13 @@ impl ShitItem {
 
 impl Game {
     pub fn new() -> Game {
-        let mut entities = Entities::new();
+        let mut entity_ops = EntityOps::new();
 
         let level = Level::load_from_svg_str(include_str!("../assets/map.svg"));
         let ground = level.ground();
         let player = Player::new(level.player_pos());
-        entities.insert(level);
-        entities.insert(player);
+        entity_ops.insert(level);
+        entity_ops.insert(player);
 
         let mut physics = Physics::new();
 
@@ -83,7 +84,7 @@ impl Game {
         let physics = Rc::new(RefCell::new(physics));
 
         let fish = Fish::new(FishRace::Goldfish);
-        entities.insert(fish);
+        entity_ops.insert(fish);
 
         let mut input_handler = user_input::InputHandler::new();
         input_handler.attach();
@@ -91,7 +92,8 @@ impl Game {
         Game {
             render_buffer: vec![],
             physics,
-            entities,
+            entities: Entities::new(),
+            entity_ops,
             input_handler,
             frames_drawn: 0,
             last_fps_print: 0.0,
@@ -112,15 +114,17 @@ impl Game {
                 physics: &mut physics,
                 input: &input,
                 entities: &self.entities,
+                entity_ops: &mut self.entity_ops,
             };
 
             for entity in self.entities.iter() {
                 entity.update(time_passed, &mut game_state);
             }
 
-            self.entities.handle_ops(&mut *physics);
+            self.entities.apply_ops(&mut self.entity_ops, &mut *physics);
         }
 
+        self.input_handler.after_update();
         self.handle_fps();
     }
 
@@ -163,6 +167,7 @@ pub fn random_shit_items(n: usize) -> Vec<ShitItem> {
                     coords: t,
                     color: [0.9; 4],
                     shader_id: ShaderId::Default,
+                    wireframe: false,
                 }],
                 moving,
             }

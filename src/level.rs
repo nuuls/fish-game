@@ -40,8 +40,9 @@ impl Level {
     }
 
     fn parse(parser: svg::parser::Parser) -> Level {
-        let polygons: RefCell<Vec<(Vec<f32>, Color)>> =
-            RefCell::new(vec![(vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0])]);
+        // points, color, wireframe
+        let polygons: RefCell<Vec<(Vec<f32>, Color, bool)>> =
+            RefCell::new(vec![(vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0], false)]);
         let mut player_pos = (0.0, 0.0);
         let mut hitbox = (0.0, 0.0, 0.0, 0.0);
 
@@ -81,9 +82,11 @@ impl Level {
                                         *position,
                                         (Some(*x), Some(*y)),
                                     );
-                                    polygons
-                                        .borrow_mut()
-                                        .push((vec![current_pos.0, current_pos.1], color));
+                                    polygons.borrow_mut().push((
+                                        vec![current_pos.0, current_pos.1],
+                                        color,
+                                        false,
+                                    ));
                                 }
 
                                 for [x, y] in point_it {
@@ -133,9 +136,11 @@ impl Level {
                                 }
                             }
                             Command::Close => {
-                                polygons
-                                    .borrow_mut()
-                                    .push((vec![0.0, 0.0], [1.0, 0.0, 1.0, 1.0]));
+                                polygons.borrow_mut().push((
+                                    vec![0.0, 0.0],
+                                    [1.0, 0.0, 1.0, 1.0],
+                                    false,
+                                ));
                             }
                         }
                     }
@@ -151,11 +156,15 @@ impl Level {
                     )
                     .unwrap_or([1.0, 0.0, 1.0, 1.0]);
 
+                    let mut wireframe = false;
+
                     if let Some(id) = attributes.get("id").map(|v| v.to_string()) {
                         if id == "player" {
                             player_pos = (x, y);
+                            wireframe = true;
                         } else if id.starts_with("hitbox") {
                             hitbox = (x, y, width, height);
+                            wireframe = true;
                         }
                     }
 
@@ -176,7 +185,7 @@ impl Level {
                         y + height,
                     ];
 
-                    polygons.borrow_mut().push((path, color));
+                    polygons.borrow_mut().push((path, color, wireframe));
                 }
                 _ => {}
             }
@@ -184,29 +193,30 @@ impl Level {
 
         let mut triangles: Vec<Triangle> = vec![];
 
-        for polygon in polygons.borrow().iter() {
+        for (points, color, wireframe) in polygons.borrow().iter() {
             // not even a triangle
-            if polygon.0.len() < 6 {
+            if points.len() < 6 {
                 continue;
             }
 
-            let path_triangles = earcutr::earcut(polygon.0.as_slice(), &vec![], 2);
+            let path_triangles = earcutr::earcut(points.as_slice(), &vec![], 2);
 
             for [a, b, c] in path_triangles.array_chunks::<3>() {
                 let mut triangle = Triangle {
                     coords: [
-                        polygon.0[*a * 2] as f32,
-                        polygon.0[*a * 2 + 1] as f32,
+                        points[*a * 2] as f32,
+                        points[*a * 2 + 1] as f32,
                         0.0 as f32,
-                        polygon.0[*b * 2] as f32,
-                        polygon.0[*b * 2 + 1] as f32,
+                        points[*b * 2] as f32,
+                        points[*b * 2 + 1] as f32,
                         0.0 as f32,
-                        polygon.0[*c * 2] as f32,
-                        polygon.0[*c * 2 + 1] as f32,
+                        points[*c * 2] as f32,
+                        points[*c * 2 + 1] as f32,
                         0.0 as f32,
                     ],
-                    color: polygon.1,
+                    color: *color,
                     shader_id: ShaderId::Default,
+                    wireframe: *wireframe,
                 };
 
                 if triangle.color[0] < 0.0001 && triangle.color[1] < triangle.color[2] {

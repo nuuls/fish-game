@@ -5,12 +5,11 @@ use wasm_bindgen::JsCast;
 
 use wasm_bindgen::prelude::Closure;
 
-
-
 #[derive(Default, Clone)]
 pub struct UserInput {
     pub move_left: bool,
     pub move_right: bool,
+    pub throw_rod: bool,
 }
 
 pub struct InputHandler {
@@ -35,6 +34,7 @@ impl InputHandler {
 
                 s.move_left = event.key() == "a";
                 s.move_right = event.key() == "d";
+                s.throw_rod = event.key() == " ";
             }) as Box<dyn FnMut(_)>);
             canvas
                 .add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())
@@ -63,5 +63,10 @@ impl InputHandler {
     pub fn current_state(&self) -> UserInput {
         let state = self.current_state.borrow();
         state.clone()
+    }
+
+    pub fn after_update(&mut self) {
+        let mut state = self.current_state.borrow_mut();
+        state.throw_rod = false;
     }
 }

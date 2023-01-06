@@ -59,29 +59,30 @@ pub struct EntityEntry {
     pub physics_collision: Option<DefaultColliderHandle>,
 }
 
-enum EntityOp {
-    Insert(Rc<RefCell<dyn Entity>>),
-    Remove(String),
-}
-
 #[derive(Default)]
 pub struct Entities {
     map: HashMap<String, EntityEntry>,
-    queued_ops: Vec<EntityOp>,
 }
 
 impl Entities {
-    pub fn insert(&mut self, entity: impl Entity + 'static) {
-        self.queued_ops
-            .push(EntityOp::Insert(Rc::new(RefCell::new(entity))));
+    // TODO: on drop remove all physics bodies and collisions
+
+    pub fn new() -> Self {
+        Default::default()
     }
 
-    pub fn remove(&mut self, id: &String) {
-        self.queued_ops.push(EntityOp::Remove(id.clone()));
+    pub fn iter(&self) -> impl Iterator<Item = &mut dyn Entity> {
+        self.map
+            .values()
+            .map(|entry| unsafe { mem::transmute(entry.entity.as_ptr()) })
     }
 
-    pub fn handle_ops(&mut self, physics: &mut Physics) {
-        for op in self.queued_ops.drain(..) {
+    pub fn entries(&mut self) -> impl Iterator<Item = &mut EntityEntry> {
+        self.map.values_mut()
+    }
+
+    pub fn apply_ops(&mut self, ops: &mut EntityOps, physics: &mut Physics) {
+        for op in ops.items_mut().drain(..) {
             match op {
                 EntityOp::Insert(entity) => {
                     let res = entity.borrow_mut().init_physics(physics);
@@ -106,23 +107,33 @@ impl Entities {
             }
         }
     }
-
-    // TODO: on drop remove all physics bodies and collisions
-
-    pub fn iter(&self) -> impl Iterator<Item = &mut dyn Entity> {
-        self.map
-            .values()
-            .map(|entry| unsafe { mem::transmute(entry.entity.as_ptr()) })
-    }
-
-    pub fn entries(&mut self) -> impl Iterator<Item = &mut EntityEntry> {
-        self.map.values_mut()
-    }
 }
 
-impl Entities {
+pub enum EntityOp {
+    Insert(Rc<RefCell<dyn Entity>>),
+    Remove(String),
+}
+
+pub struct EntityOps {
+    items: Vec<EntityOp>,
+}
+
+impl EntityOps {
     pub fn new() -> Self {
-        Default::default()
+        Self { items: Vec::new() }
+    }
+
+    pub fn insert(&mut self, entity: impl Entity + 'static) {
+        self.items
+            .push(EntityOp::Insert(Rc::new(RefCell::new(entity))));
+    }
+
+    pub fn remove(&mut self, id: &String) {
+        self.items.push(EntityOp::Remove(id.clone()));
+    }
+
+    pub fn items_mut(&mut self) -> &mut Vec<EntityOp> {
+        &mut self.items
     }
 }
 
@@ -130,6 +141,7 @@ pub struct GameState<'a> {
     pub input: &'a UserInput,
     pub physics: &'a mut Physics,
     pub entities: &'a Entities,
+    pub entity_ops: &'a mut EntityOps,
 }
 
 #[derive(Clone, Default)]
@@ -137,6 +149,7 @@ pub struct Triangle {
     pub coords: [f32; 9],
     pub color: [f32; 4],
     pub shader_id: ShaderId,
+    pub wireframe: bool,
 }
 
 #[derive(Clone, Default)]

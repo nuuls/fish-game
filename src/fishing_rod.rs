@@ -1,12 +1,18 @@
-use nphysics2d::object::{DefaultBodyHandle, DefaultColliderHandle};
-
-use crate::{
-    fishing_rod::FishingRod,
-    sick_physics::Physics,
-    types::{red, Entity, GameState, ShaderId, Triangle},
+use nphysics2d::{
+    algebra::Force2,
+    object::{DefaultBodyHandle, DefaultColliderHandle},
 };
 
-pub struct Player {
+use crate::{
+    sick_physics::Physics,
+    types::{cyan, Entity, GameState, ShaderId, Triangle},
+    utils::next_id,
+};
+
+const HALF_WIDTH: f32 = 0.1;
+const HALF_HEIGHT: f32 = 0.1;
+
+pub struct FishingRod {
     id: String,
     position: (f32, f32),
     rotation: f32,
@@ -16,7 +22,7 @@ pub struct Player {
     collider_handle: Option<DefaultColliderHandle>,
 }
 
-impl Entity for Player {
+impl Entity for FishingRod {
     fn id(&self) -> &String {
         &self.id
     }
@@ -26,16 +32,14 @@ impl Entity for Player {
     }
 
     fn update(&mut self, _time_passed: f32, gs: &mut GameState) {
-        let movement: f32 = if gs.input.move_left { -1.0 } else { 0.0 }
-            + if gs.input.move_right { 1.0 } else { 0.0 };
-
-        if gs.input.throw_rod {
-            gs.entity_ops.insert(FishingRod::new(self.position));
-        }
-
-        // walk
+        // apply force
         if let Some(body) = self.body_handle.and_then(|h| gs.physics.bodies.get_mut(h)) {
-            body.apply_displacement(&[movement * 0.02, 0.0, 0.0]);
+            body.apply_force(
+                0,
+                &Force2::from_slice(&[10.0, 0.0, 0.0]),
+                nphysics2d::math::ForceType::Impulse,
+                true,
+            );
         }
 
         // update position
@@ -62,7 +66,7 @@ impl Entity for Player {
         physics: &mut Physics,
     ) -> Option<(DefaultBodyHandle, DefaultColliderHandle)> {
         let (body_handle, collider_handle) =
-            physics.insert_cuboid(self.position.0 + 0.5, self.position.1 + 1.0, 1.0, 2.0);
+            physics.insert_cuboid(self.position.0, self.position.1, HALF_WIDTH, HALF_HEIGHT);
 
         self.body_handle = Some(body_handle);
         self.collider_handle = Some(collider_handle);
@@ -71,27 +75,24 @@ impl Entity for Player {
     }
 }
 
-impl Player {
-    pub fn new(position: (f32, f32)) -> Player {
-        let half_width = 0.5;
-        let half_height = 1.0;
-
-        Player {
-            id: "player".to_string(),
+impl FishingRod {
+    pub fn new(position: (f32, f32)) -> Self {
+        Self {
+            id: next_id() + &"fishing_hook",
             position,
             rotation: 0.0,
             triangles: vec![
                 Triangle::from_points(
-                    (-half_width, -half_height),
-                    (half_width, -half_height),
-                    (half_width, half_height),
-                    red(),
+                    (-HALF_WIDTH, -HALF_HEIGHT),
+                    (HALF_WIDTH, -HALF_HEIGHT),
+                    (HALF_WIDTH, HALF_HEIGHT),
+                    cyan(),
                 ),
                 Triangle::from_points(
-                    (-half_width, -half_height),
-                    (half_width, half_height),
-                    (-half_width, half_height),
-                    red(),
+                    (-HALF_WIDTH, -HALF_HEIGHT),
+                    (HALF_WIDTH, HALF_HEIGHT),
+                    (-HALF_WIDTH, HALF_HEIGHT),
+                    cyan(),
                 ),
             ],
             body_handle: None,

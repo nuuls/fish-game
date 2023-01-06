@@ -2,6 +2,7 @@ use nphysics2d::force_generator::DefaultForceGeneratorSet;
 use nphysics2d::joint::DefaultJointConstraintSet;
 use nphysics2d::math::Isometry;
 use nphysics2d::nalgebra::Vector2;
+use nphysics2d::ncollide2d::pipeline::CollisionGroups;
 use nphysics2d::ncollide2d::shape::{Cuboid, ShapeHandle};
 use nphysics2d::object::{
     BodyPartHandle, ColliderDesc, DefaultBodyHandle, DefaultBodySet, DefaultColliderHandle,
@@ -13,6 +14,20 @@ use crate::types::{red, Entity, GameState, Triangle};
 
 type F = f32;
 
+pub struct Collisions {
+    pub player: CollisionGroups,
+    pub fishing_rod: CollisionGroups,
+}
+
+impl Collisions {
+    pub fn new() -> Self {
+        Self {
+            player: CollisionGroups::new(),
+            fishing_rod: CollisionGroups::new(),
+        }
+    }
+}
+
 pub struct Physics {
     pub id: String,
     pub triangles: Vec<Triangle>,
@@ -23,6 +38,8 @@ pub struct Physics {
     pub colliders: DefaultColliderSet<F>,
     pub joint_constraints: DefaultJointConstraintSet<F>,
     pub force_generators: DefaultForceGeneratorSet<F>,
+
+    pub collisions: Collisions,
 }
 
 impl Physics {
@@ -45,6 +62,8 @@ impl Physics {
             colliders,
             joint_constraints,
             force_generators,
+
+            collisions: Collisions::new(),
         }
     }
 

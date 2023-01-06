@@ -125,7 +125,11 @@ impl Renderer {
         }
 
         // draw
-        gl.draw_elements_with_i32(GL::TRIANGLES, NUM_COORDINATES, GL::UNSIGNED_SHORT, 0);
+        if triangle.wireframe {
+            gl.draw_elements_with_i32(GL::LINE_LOOP, NUM_COORDINATES, GL::UNSIGNED_SHORT, 0);
+        } else {
+            gl.draw_elements_with_i32(GL::TRIANGLES, NUM_COORDINATES, GL::UNSIGNED_SHORT, 0);
+        }
 
         Ok(())
     }
