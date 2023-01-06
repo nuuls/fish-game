@@ -41,6 +41,9 @@ pub trait Entity {
     fn position(&self) -> (f32, f32) {
         return (0.0, 0.0);
     }
+    fn rotation(&self) -> f32 {
+        return 0.0;
+    }
     fn init_physics(
         &mut self,
         _physics: &mut Physics,

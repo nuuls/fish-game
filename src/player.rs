@@ -11,6 +11,7 @@ use crate::{
 pub struct Player {
     id: String,
     position: (f32, f32),
+    rotation: f32,
     triangles: Vec<Triangle>,
 
     body_handle: Option<DefaultBodyHandle>,
@@ -48,28 +49,33 @@ impl Entity for Player {
             self.triangles.clear();
 
             let translation = collider.position().translation;
-            let (x, y) = (translation.x, translation.y);
+            self.position = (translation.x, translation.y);
+            self.rotation = collider.position().rotation.angle();
 
             let half_width = 0.5;
             let half_height = 1.0;
 
             self.triangles.push(Triangle::from_points(
-                (x - half_width, y - half_height),
-                (x + half_width, y - half_height),
-                (x + half_width, y + half_height),
+                (-half_width, -half_height),
+                (half_width, -half_height),
+                (half_width, half_height),
                 red(),
             ));
             self.triangles.push(Triangle::from_points(
-                (x - half_width, y - half_height),
-                (x + half_width, y + half_height),
-                (x - half_width, y + half_height),
+                (-half_width, -half_height),
+                (half_width, half_height),
+                (-half_width, half_height),
                 red(),
             ));
         }
     }
 
     fn position(&self) -> (f32, f32) {
-        (0.0, 0.0)
+        self.position
+    }
+
+    fn rotation(&self) -> f32 {
+        self.rotation
     }
 
     fn init_physics(
@@ -91,6 +97,7 @@ impl Player {
         Player {
             id: "player".to_string(),
             position,
+            rotation: 0.0,
             triangles: vec![Triangle {
                 coords: [
                     0.0, 0.0, 1.0, //

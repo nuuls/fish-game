@@ -14,8 +14,8 @@ pub struct Shader {
     pub program: WebGlProgram,
     pub coordinate_index: u32,
     pub camera_index: WebGlUniformLocation,
+    pub transform_index: WebGlUniformLocation,
     pub color_index: WebGlUniformLocation,
-    pub position_offset_index: WebGlUniformLocation,
 }
 
 pub struct WaterShader {
@@ -36,19 +36,24 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn use_shader(&self, tri: &Triangle, position_offset: (f32, f32)) -> Result<(), JsValue> {
+    pub fn use_shader(
+        &self,
+        tri: &Triangle,
+        transform_offset: (f32, f32),
+        transform_rotation: f32,
+    ) -> Result<(), JsValue> {
         let shader = &self.shader;
 
         self.gl.use_program(Some(&shader.program));
         self.gl
             .uniform_matrix4fv_with_f32_array(Some(&shader.camera_index), false, &self.camera);
+        self.gl.uniform_matrix4fv_with_f32_array(
+            Some(&shader.transform_index),
+            false,
+            &make_transform(transform_offset, transform_rotation),
+        );
         self.gl
             .uniform4fv_with_f32_array(Some(&shader.color_index), &tri.color);
-        self.gl.uniform2f(
-            Some(&shader.position_offset_index),
-            position_offset.0,
-            position_offset.1,
-        );
         Ok(())
     }
 
@@ -72,7 +77,8 @@ impl Renderer {
     pub fn triangle(
         &self,
         triangle: &Triangle,
-        position_offset: (f32, f32),
+        transform_offset: (f32, f32),
+        transform_rotation: f32,
     ) -> Result<(), JsValue> {
         const NUM_COORDINATES: i32 = 3;
         use WebGlRenderingContext as GL;
@@ -110,7 +116,7 @@ impl Renderer {
 
             self.use_water_shader(&triangle.color, water_y_level)?;
         } else {
-            self.use_shader(&triangle, position_offset)?;
+            self.use_shader(&triangle, transform_offset, transform_rotation)?;
         }
 
         // draw
@@ -118,4 +124,16 @@ impl Renderer {
 
         Ok(())
     }
+}
+
+fn make_transform(transform_offset: (f32, f32), transform_rotation: f32) -> Mat4 {
+    let mut tmp1 = mat4::new_identity();
+    let mut tmp2 = mat4::new_identity();
+    mat4::translate(
+        &mut tmp2,
+        &tmp1,
+        &[transform_offset.0, transform_offset.1, 0.0],
+    );
+    mat4::rotate_z(&mut tmp1, &tmp2, &transform_rotation);
+    tmp1
 }

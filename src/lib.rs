@@ -36,10 +36,8 @@ struct Buffers(WebGlBuffer, WebGlBuffer, WebGlBuffer);
 fn into_shader(gl: &WebGlRenderingContext, program: WebGlProgram) -> Shader {
     Shader {
         camera_index: gl.get_uniform_location(&program, "camera").unwrap(),
+        transform_index: gl.get_uniform_location(&program, "transform").unwrap(),
         color_index: gl.get_uniform_location(&program, "color").unwrap(),
-        position_offset_index: gl
-            .get_uniform_location(&program, "position_offset")
-            .unwrap(),
         coordinate_index: gl.get_attrib_location(&program, "coordinates") as u32,
         program: program,
     }
@@ -176,7 +174,7 @@ fn draw_scene(
     game.tick(time_passed);
     for en in game.entities().iter() {
         for tri in en.triangles() {
-            renderer.triangle(&tri, en.position())?;
+            renderer.triangle(&tri, en.position(), en.rotation())?;
         }
     }
 
